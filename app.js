@@ -1,5 +1,6 @@
 // ==========================
 // Holiday Harmony — app.js
+// (FULL COPY-PASTE VERSION)
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -13,7 +14,7 @@ if (!window.supabase || !window.supabase.createClient) {
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ PASTE REAL VALUES
+// ✅ PASTE REAL VALUES (KEEP QUOTES!)
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
@@ -114,7 +115,7 @@ partyBtn?.addEventListener("click", () => {
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.80; // LOUDER
+    ambienceAudio.volume = 0.85; // louder
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -170,28 +171,23 @@ function hashStringToInt(str) {
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
   return h;
 }
-
 function missionKeyBase() { return `hh_mission_${room}_${todayISODate()}`; }
 function myMissionOverrideKey() { return `${missionKeyBase()}_override_${DEVICE_ID}`; }
 function missionDoneKey() {
   const name = ((nameEl?.value || getSavedName()) || "anon").trim().toLowerCase();
   return `${missionKeyBase()}_done_${name}_${DEVICE_ID}`;
 }
-
 function getTodaysMissionIndex() {
   const baseSeed = `${room}|${todayISODate()}`;
   return hashStringToInt(baseSeed) % missionPool.length;
 }
-
 function renderMission() {
   const override = localStorage.getItem(myMissionOverrideKey());
   const idx = override ? Number(override) : getTodaysMissionIndex();
   const mission = missionPool[(Number.isFinite(idx) ? idx : 0) % missionPool.length];
   const done = localStorage.getItem(missionDoneKey()) === "1";
-
   missionOut.innerHTML = `<b>Today:</b> ${escapeHtml(mission)}<br><small>${done ? "✅ You marked it done." : "Not marked done yet."}</small>`;
 }
-
 missionDoneBtn?.addEventListener("click", () => {
   playSound("tap");
   const name = (nameEl.value || "").trim();
@@ -200,14 +196,12 @@ missionDoneBtn?.addEventListener("click", () => {
   renderMission();
   playSound("success");
 });
-
 missionNewBtn?.addEventListener("click", () => {
   playSound("tap");
   localStorage.setItem(myMissionOverrideKey(), String(Math.floor(Math.random() * missionPool.length)));
   renderMission();
   playSound("success");
 });
-
 renderMission();
 
 // ==========================
@@ -225,7 +219,6 @@ const activities = [
   "Quick tidy sprint: 5 minutes with music",
   "Story time: each person shares one warm memory"
 ];
-
 document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
   const pick = activities[Math.floor(Math.random() * activities.length)];
@@ -241,7 +234,6 @@ const defuseLines = [
   "Peace offering: bring a snack. Snacks solve many mysteries.",
   "Kind first, correct later. Works weirdly well."
 ];
-
 defuseBtn?.addEventListener("click", () => {
   playSound("tap");
   const pick = defuseLines[Math.floor(Math.random() * defuseLines.length)];
@@ -262,7 +254,6 @@ const chores = [
   "You rest — you earned it 😌",
   "You pick the movie 🎬",
 ];
-
 choreBtn?.addEventListener("click", () => {
   playSound("tap");
   const pick = chores[Math.floor(Math.random() * chores.length)];
@@ -281,11 +272,9 @@ const moodButtons = {
   ok: document.getElementById("moodOk"),
   bad: document.getElementById("moodBad"),
 };
-
 function clearMoodSelection() {
   Object.values(moodButtons).forEach(btn => btn?.classList.remove("moodSelected"));
 }
-
 async function setMood(mood) {
   const name = (nameEl.value || "").trim();
   if (!name) { moodStatusEl.textContent = "Please enter your name first."; return; }
@@ -294,7 +283,6 @@ async function setMood(mood) {
   playSound("tap");
 
   const checkin_date = todayISODate();
-
   const { error } = await supa
     .from("checkins")
     .upsert([{ room_code: room, name, checkin_date, mood }],
@@ -311,7 +299,6 @@ async function setMood(mood) {
   playSound("success");
   await loadAll();
 }
-
 moodButtons.good?.addEventListener("click", () => setMood("good"));
 moodButtons.ok?.addEventListener("click", () => setMood("ok"));
 moodButtons.bad?.addEventListener("click", () => setMood("bad"));
@@ -329,14 +316,15 @@ function loadMyMoodSelection(checkinsToday) {
 }
 
 // ==========================
-// Reactions (toggle + count)
+// Reactions (debug-proof)
 // ==========================
 async function toggleReaction(memoryId, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
   if (!memoryId) return;
+
   playSound("tap");
 
-  // Check if this device already reacted with this emoji on this memory
+  // 1) SELECT existing
   const { data: existing, error: selErr } = await supa
     .from("reactions")
     .select("id")
@@ -346,28 +334,47 @@ async function toggleReaction(memoryId, emoji) {
     .eq("device_id", DEVICE_ID)
     .limit(1);
 
-  if (selErr) { debug("Reaction select error: " + selErr.message); return; }
+  if (selErr) {
+    alert("REACTION SELECT ERROR:\n" + selErr.message);
+    debug("❌ Reaction SELECT error: " + selErr.message);
+    return;
+  }
 
+  // 2) Toggle: delete if exists, else insert
   if (existing && existing.length) {
     const { error: delErr } = await supa
       .from("reactions")
       .delete()
       .eq("id", existing[0].id);
 
-    if (delErr) { debug("Reaction delete error: " + delErr.message); return; }
+    if (delErr) {
+      alert("REACTION DELETE ERROR:\n" + delErr.message);
+      debug("❌ Reaction DELETE error: " + delErr.message);
+      return;
+    }
   } else {
     const { error: insErr } = await supa
       .from("reactions")
-      .insert([{ room_code: room, memory_id: memoryId, emoji, name, device_id: DEVICE_ID }]);
+      .insert([{
+        room_code: room,
+        memory_id: memoryId,
+        emoji,
+        name,
+        device_id: DEVICE_ID
+      }]);
 
-    if (insErr) { debug("Reaction insert error: " + insErr.message); return; }
+    if (insErr) {
+      alert("REACTION INSERT ERROR:\n" + insErr.message);
+      debug("❌ Reaction INSERT error: " + insErr.message);
+      return;
+    }
   }
 
   playSound("success");
   await loadAll();
 }
 
-// Event delegation: works even after re-render
+// Event delegation: always works
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest(".reactBtn");
   if (!btn) return;
@@ -500,7 +507,6 @@ function buildTipsPool(memoriesTodayCount, checkinsToday) {
   if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
   if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
   if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
-
   tips.push("🫶 Compliment round: one sincere sentence each.");
   tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
   tips.push("🧹 5-minute tidy sprint with music = fast reset.");
@@ -547,6 +553,53 @@ async function postMemory() {
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
 
 // ==========================
+// Supabase reaction self-test
+// ==========================
+async function reactionsSelfTest() {
+  // This tells us if the database allows select/insert/delete for anon users.
+  try {
+    const pingEmoji = "TEST";
+    const fakeMemoryId = 0; // will fail if memory_id must reference a real memory (that's OK; error will tell us)
+    const name = "selftest";
+
+    // Try SELECT
+    const sel = await supa.from("reactions").select("id").limit(1);
+    if (sel.error) {
+      debug("❌ Reactions SELECT blocked: " + sel.error.message);
+      return;
+    }
+
+    // Try INSERT (may fail due to constraints; we want the exact message)
+    const ins = await supa.from("reactions").insert([{
+      room_code: room,
+      memory_id: fakeMemoryId,
+      emoji: pingEmoji,
+      name,
+      device_id: DEVICE_ID
+    }]).select("id");
+
+    if (ins.error) {
+      debug("⚠️ Reactions INSERT test failed (good clue): " + ins.error.message);
+      return;
+    }
+
+    // Try DELETE test row
+    const newId = ins.data?.[0]?.id;
+    if (newId) {
+      const del = await supa.from("reactions").delete().eq("id", newId);
+      if (del.error) {
+        debug("⚠️ Reactions DELETE test failed: " + del.error.message);
+        return;
+      }
+    }
+
+    debug("✅ Reactions SELECT/INSERT/DELETE looks OK.");
+  } catch (e) {
+    debug("⚠️ Reactions self-test exception: " + (e?.message || String(e)));
+  }
+}
+
+// ==========================
 // Load + render
 // ==========================
 let lastRenderKey = "";
@@ -576,7 +629,7 @@ async function loadAll() {
     let reactionsTodayCount = 0;
 
     for (const r of reactions) {
-      const memId = r.memory_id;
+      const memId = String(r.memory_id);
       if (!reactionsByMemory[memId]) reactionsByMemory[memId] = { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
 
       if (reactionsByMemory[memId][r.emoji] !== undefined) reactionsByMemory[memId][r.emoji] += 1;
@@ -597,16 +650,16 @@ async function loadAll() {
     loadMyMoodSelection(checkinsToday);
     renderMission();
 
-    // Render memories only when changed (prevents blinking)
+    // Render only when changed (stops blinking)
     const renderKey = memories
-      .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[m.id]?.total || 0}`)
+      .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
       .join("||");
 
     if (renderKey !== lastRenderKey) {
       lastRenderKey = renderKey;
 
       listEl.innerHTML = memories.map(m => {
-        const rx = reactionsByMemory[m.id] || { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
+        const rx = reactionsByMemory[String(m.id)] || { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
         return `
           <div class="memoryCard">
             <b>${escapeHtml(m.name)}</b>
@@ -629,5 +682,7 @@ async function loadAll() {
   }
 }
 
+// Start
+reactionsSelfTest();   // gives us clues in the debug pill
 setInterval(loadAll, 5000);
 loadAll();
