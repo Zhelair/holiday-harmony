@@ -157,13 +157,15 @@
     <div class="card">
       <h3>📌 Quick Tips</h3>
       <button id="newTipBtn" type="button">Give me a tip</button>
-      <div id="tipsOut" class="tipBox"></div>
+      <div id="tipsOut" class="tipBox">Loading tips…</div>
       <small>Short, gentle prompts to keep the vibe warm.</small>
     </div>
   </div>
 
   <div id="list"></div>
 
-  <script type="module" src="app.js"></script>
+  <!-- ✅ More compatible on phones than module imports -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
 </body>
 </html>
