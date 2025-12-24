@@ -5,27 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Holiday Harmony</title>
   <style>
-    body{font-family:system-ui,Arial;max-width:760px;margin:30px auto;padding:0 14px}
-    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
-    input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:8px 0}
-    button{font-weight:800;cursor:pointer}
-    small{color:#666}
-    .row{display:flex;gap:10px}
-    .row>*{flex:1}
+    :root{
+      --bg1:#f6f7ff; --bg2:#ffffff; --card:#ffffffcc; --border:#e7e7ef;
+      --text:#1c1c22; --muted:#6b6b78; --shadow:0 10px 30px rgba(0,0,0,.06);
+      --radius:16px;
+    }
+    body{
+      font-family:system-ui,Arial; max-width:860px; margin:28px auto; padding:0 14px;
+      color:var(--text);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+    h1{margin:0 0 6px 0}
+    .card{
+      border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin:12px 0;
+      background:var(--card); box-shadow:var(--shadow); backdrop-filter: blur(6px);
+      animation: fadeIn .35s ease;
+    }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
+    input, select, button{
+      width:100%; padding:12px; border-radius:14px; border:1px solid var(--border); margin:8px 0;
+      font-size:15px; background:#fff;
+    }
+    button{font-weight:900; cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,.06);}
+    small{color:var(--muted)}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .row>*{flex:1; min-width: 180px;}
+    .pill{display:inline-block; border:1px solid var(--border); background:#fff; border-radius:999px; padding:8px 12px;}
   </style>
 </head>
 <body>
   <h1>🎄 Holiday Harmony</h1>
-  <small>Survive under one roof. Collect happy moments. Keep the vibe alive.</small>
+  <small class="pill">Co-op survival under one roof. No bosses, just family.</small>
 
   <div class="card">
     <h3>Create / Enter a room</h3>
     <div class="row">
       <input id="roomCode" placeholder="Room code (e.g. xmas2025)" />
-      <input id="yourName" placeholder="Your name (optional)" />
+      <input id="yourName" placeholder="Your name (saved on this device)" />
+      <select id="yourRole">
+        <option value="">Role (optional)</option>
+        <option>Parent</option>
+        <option>Child</option>
+        <option>Guest</option>
+        <option>Uncle chaos agent</option>
+      </select>
     </div>
     <button id="goBtn">Go to room</button>
-    <small>Share the room link with your family. Everyone uses the same code.</small>
+    <small>Tip: share the room link. Everyone uses the same room code.</small>
   </div>
 
   <div class="card">
@@ -35,14 +61,26 @@
   </div>
 
   <script>
+    // Load saved name/role
+    const savedName = localStorage.getItem("hh_name") || "";
+    const savedRole = localStorage.getItem("hh_role") || "";
+    document.getElementById("yourName").value = savedName;
+    document.getElementById("yourRole").value = savedRole;
+
     function goToRoom(code){
       code = (code || "").trim();
       const name = (document.getElementById("yourName").value || "").trim();
+      const role = (document.getElementById("yourRole").value || "").trim();
 
       if(!code){ alert("Please enter a room code."); return; }
 
+      // Save for next time
+      if (name) localStorage.setItem("hh_name", name);
+      if (role) localStorage.setItem("hh_role", role);
+
       let url = "room.html?room=" + encodeURIComponent(code);
       if (name) url += "&name=" + encodeURIComponent(name);
+      if (role) url += "&role=" + encodeURIComponent(role);
 
       location.href = url;
     }
