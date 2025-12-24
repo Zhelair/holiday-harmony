@@ -6,116 +6,68 @@
   <title>Holiday Harmony — Room</title>
   <style>
     :root{
-      --bg1:#f6f7ff;
-      --bg2:#ffffff;
-      --card:#ffffffcc;
-      --border:#e7e7ef;
-      --text:#1c1c22;
-      --muted:#6b6b78;
-      --shadow: 0 10px 30px rgba(0,0,0,.06);
+      --bg1:#f6f7ff; --bg2:#ffffff; --card:#ffffffcc; --border:#e7e7ef;
+      --text:#1c1c22; --muted:#6b6b78; --shadow:0 10px 30px rgba(0,0,0,.06);
       --radius:16px;
     }
     body{
       font-family: system-ui, Arial;
-      max-width: 980px;
+      max-width: 1060px;
       margin: 22px auto;
       padding: 0 14px;
       color: var(--text);
       background: linear-gradient(180deg, var(--bg1), var(--bg2));
     }
     .top{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom: 6px;
+      display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 6px;
     }
     h1{ margin: 0; }
     .pill{
-      border:1px solid var(--border);
-      background: #fff;
-      border-radius:999px;
-      padding:10px 12px;
-      max-width:100%;
-      overflow:auto;
-      box-shadow: var(--shadow);
-      font-size: 14px;
+      border:1px solid var(--border); background:#fff; border-radius:999px; padding:10px 12px;
+      max-width:100%; overflow:auto; box-shadow: var(--shadow); font-size: 14px;
     }
     .card{
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin: 12px 0;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(6px);
+      border:1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 12px 0;
+      background: var(--card); box-shadow: var(--shadow); backdrop-filter: blur(6px);
+      animation: fadeIn .35s ease;
     }
-    .grid{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:12px;
-    }
-    @media (min-width: 900px){
-      .grid{ grid-template-columns: 1fr 1fr; }
-    }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
+
     input,textarea,button{
-      width:100%;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      margin:8px 0;
-      font-size: 15px;
-      background:#fff;
+      width:100%; padding:12px; border-radius:14px; border:1px solid var(--border); margin:8px 0;
+      font-size: 15px; background:#fff;
     }
     textarea{ resize: vertical; }
     button{
-      font-weight:800;
-      cursor:pointer;
-      transition: transform .06s ease, box-shadow .2s ease;
+      font-weight:900; cursor:pointer; transition: transform .06s ease, box-shadow .2s ease;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
     }
     button:active{ transform: translateY(1px); }
     small{ color: var(--muted); }
 
-    .moodRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top: 8px;
-    }
+    .moodRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px; }
     .moodBtn{
-      flex: 1;
-      min-width: 120px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:12px;
-      border-radius: 14px;
-      border:1px solid var(--border);
-      background:#fff;
-      font-weight: 800;
+      flex: 1; min-width: 120px; display:flex; align-items:center; justify-content:center; gap:8px;
+      padding:12px; border-radius: 14px; border:1px solid var(--border); background:#fff; font-weight: 900;
     }
     .moodBtn span.emoji{ font-size: 18px; }
-    .moodSelected{
-      outline: 3px solid rgba(0,0,0,.08);
-    }
-    .kpiRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top: 10px;
-    }
+    .moodSelected{ outline: 3px solid rgba(0,0,0,.08); }
+
+    .kpiRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
     .kpi{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius: 14px;
-      padding: 10px 12px;
-      flex: 1;
-      min-width: 170px;
+      border:1px solid var(--border); background:#fff; border-radius: 14px; padding: 10px 12px;
+      flex: 1; min-width: 200px;
     }
     .kpi b{ display:block; font-size: 16px; }
+
+    .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    .miniRow button{ flex:1; min-width: 200px; }
+
+    .checkRow{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+    .checkRow input{ width:auto; margin:0; }
   </style>
 </head>
 <body>
@@ -132,29 +84,49 @@
       <div class="kpi"><b id="kpiCheckins">—</b><small>Mood check-ins today</small></div>
       <div class="kpi"><b id="kpiMood">—</b><small>Today’s vibe</small></div>
     </div>
-    <small>Dashboard uses: memories + mood check-ins (today).</small>
+    <small>Uses: memories + mood check-ins (today).</small>
   </div>
 
   <div class="grid">
     <div class="card">
       <h3>✅ Daily Mood Check-in</h3>
       <input id="name" placeholder="Your name" />
-      <small>Pick your mood for today (you can change it later).</small>
+      <small id="roleLine"></small>
 
+      <small>Pick your mood for today (you can change it later).</small>
       <div class="moodRow">
         <button class="moodBtn" id="moodGood" type="button"><span class="emoji">😇</span> Calm</button>
         <button class="moodBtn" id="moodOk" type="button"><span class="emoji">😐</span> Okay</button>
         <button class="moodBtn" id="moodBad" type="button"><span class="emoji">😤</span> Spicy</button>
       </div>
-
       <small id="moodStatus"></small>
+
+      <div class="miniRow" style="margin-top:10px;">
+        <button id="defuseBtn" type="button">🧯 Defuse / Reset</button>
+        <button id="choreBtn" type="button">🎡 Chore Roulette</button>
+      </div>
+      <div id="defuseOut"></div>
     </div>
 
+    <div class="card">
+      <h3>🏆 Awards Preview</h3>
+      <div id="awardsOut">Loading…</div>
+      <small>Based on today’s activity. Some awards include a tiny bit of chaos. (As they should.)</small>
+    </div>
+  </div>
+
+  <div class="grid">
     <div class="card">
       <h3>🎲 Activity Generator</h3>
       <button id="activityBtn" type="button">Give us something fun</button>
       <div id="activityOut"></div>
       <small>Instant “what do we do now?” rescue button.</small>
+    </div>
+
+    <div class="card">
+      <h3>🧾 Today’s Mood Board</h3>
+      <div id="moodBoard">Loading…</div>
+      <small>Shows who checked in today (by name).</small>
     </div>
   </div>
 
@@ -162,14 +134,21 @@
     <div class="card">
       <h3>✨ Memory Vault</h3>
       <textarea id="moment" rows="3" placeholder="Happy moment (e.g. Dad laughed at my joke — miracles happen)"></textarea>
+
+      <div class="checkRow">
+        <input id="privateToggle" type="checkbox" />
+        <label for="privateToggle"><small>🔒 Private (only on this device)</small></label>
+      </div>
+
       <button id="postBtn" type="button">Post memory</button>
       <small id="status"></small>
+      <div id="privateList"></div>
     </div>
 
     <div class="card">
-      <h3>🧾 Today’s Mood Board</h3>
-      <div id="moodBoard">Loading…</div>
-      <small>Shows who checked in today (by name).</small>
+      <h3>📌 Quick Tips</h3>
+      <div id="tipsOut"></div>
+      <small>Short prompts to keep the vibe alive.</small>
     </div>
   </div>
 
