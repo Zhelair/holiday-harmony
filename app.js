@@ -123,12 +123,18 @@ document.getElementById("activityBtn")?.addEventListener("click", () => {
 
 // ---- Reset Moment (Defuse)
 const defuseLines = [
-  "Quick reset: everyone’s a little tired. Let’s be extra kind for 10 minutes.",
-  "Tiny break helps: water + a deep breath. Then we continue gently. 🙂",
-  "Try ‘soft voice mode’ for 5 minutes. It’s surprisingly effective.",
-  "Switch scene: tea, a short walk, or an activity together. No big talks right now.",
-  "Assume good intentions. Your people love you — even if someone is dramatic about potatoes."
+  "Reset moment: 3 slow breaths. Then we continue with softer voices. 🙂",
+  "Quick pause: water + a small smile. Team ‘family’ is back online.",
+  "Switch scene: tea, a short walk, or a cozy activity. Keep it light for 10 minutes.",
+  "Try the ‘hug rule’: if it’s not worth a hug later, it’s not worth a fight now.",
+  "Compliment round: each person says one nice thing. Short and real.",
+  "Mini mission: do one helpful thing (tiny!) and come back with better energy.",
+  "If someone is tired: it’s not personal. It’s just… tiredness. We’ve all been there.",
+  "Humor mode: say your complaint like a Disney villain. Everyone laughs, problem shrinks.",
+  "Peace offering: bring a snack. Snacks solve many mysteries.",
+  "New plan: let’s be kind first, correct later. Works weirdly well."
 ];
+
 
 defuseBtn?.addEventListener("click", () => {
   playSound("tap");
