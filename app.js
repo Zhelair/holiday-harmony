@@ -1,6 +1,6 @@
 // ==========================
 // Holiday Harmony — app.js
-// (FULL COPY-PASTE VERSION)
+// EN/RU toggle + Vibe pulse animation
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -30,7 +30,6 @@ if (!room) {
 
 // ---- DOM
 document.getElementById("roomLabel").textContent = room;
-
 const shareLink = document.getElementById("shareLink");
 const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
 shareLink.textContent = `Share: ${base}room.html?room=${encodeURIComponent(room)}`;
@@ -64,7 +63,10 @@ const missionOut = document.getElementById("missionOut");
 const missionDoneBtn = document.getElementById("missionDoneBtn");
 const missionNewBtn = document.getElementById("missionNewBtn");
 
+const vibeWrapEl = document.getElementById("vibeWrap");
 const vibeBarEl = document.getElementById("vibeBar");
+
+const langBtn = document.getElementById("langBtn");
 
 // ---- helpers
 function escapeHtml(str) {
@@ -115,7 +117,7 @@ partyBtn?.addEventListener("click", () => {
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.85; // louder
+    ambienceAudio.volume = 0.85;
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -151,116 +153,425 @@ function ensureDeviceId() {
 const DEVICE_ID = ensureDeviceId();
 
 // ==========================
+// Language (EN / RU)
+// ==========================
+const i18n = {
+  en: {
+    roomTitle: "🏠 Room:",
+    appTitle: "Holiday Harmony",
+    appSubtitle: "Co-op family mini-game: collect good moments, keep the vibe warm.",
+
+    soundLabel: "🔊 Sound",
+    party: "🎉 Party",
+
+    missionTitle: "🎯 Today’s Gentle Challenge",
+    missionDone: "✅ I did it",
+    missionNew: "🎲 New (just for me)",
+    missionHint: "Shared daily challenge + personal reroll option.",
+
+    dashTitle: "📊 Family Dashboard",
+    kpiMemoriesLabel: "Happy moments today",
+    kpiCheckinsLabel: "Mood check-ins today",
+    kpiMoodLabel: "Today’s vibe",
+    kpiReactsLabel: "Reactions today",
+
+    checkinTitle: "✅ Daily Mood Check-in",
+    namePh: "Your name",
+    checkinHint: "Pick your mood for today (you can change it later).",
+    calm: "Calm",
+    okay: "Okay",
+    overloaded: "Overloaded",
+    resetMoment: "🧯 Reset Moment",
+    choreRoulette: "🎡 Chore Roulette",
+
+    awardsTitle: "🏆 Awards Preview",
+    awardsHint: "Friendly awards only. No roasting. 😄",
+
+    activityTitle: "🎲 Activity Generator",
+    activityBtn: "Give us something fun",
+    activityHint: "Instant “what do we do now?” rescue button.",
+
+    boardTitle: "🧾 Today’s Mood Board",
+    boardHint: "Shows who checked in today.",
+
+    vaultTitle: "✨ Memory Vault",
+    momentPh: "Happy moment (e.g. We laughed together at breakfast)",
+    post: "Post memory",
+    reactionsLabel: "Reactions:",
+    reactionsHint: "Tap ❤️ 😂 ⭐ on any memory (tap again to undo).",
+
+    tipsTitle: "📌 Quick Tips",
+    tipBtn: "Give me a tip",
+    tipsHint: "Short prompts to keep the vibe warm.",
+
+    pleaseName: "Please enter your name first 🙂",
+    saving: "Saving…",
+    checkedIn: "Checked in ✅",
+    posted: "Posted ✅",
+    fillNameMoment: "Please fill your name + the moment.",
+
+    vibeNoCheckins: "No check-ins yet",
+    vibeCalm: "😇 Calm",
+    vibeOkay: "😐 Okay",
+    vibeOver: "😤 Overloaded",
+
+    cozyStart: "🙂 Cozy start",
+    goodVibes: "🙂 Good vibes",
+    greatDay: "😄 Great day together",
+    gentleReset: "🧯 Gentle reset",
+
+    cozyNote: "Post one happy moment (even a tiny one).",
+    goodNote: "Nice. The warm timeline is growing.",
+    greatNote: "Food, laughs, and a little rest. Perfect.",
+    resetNote: "Tea/walk mode can save the evening.",
+
+    recapTitle: "Today recap:",
+    recapMem: "Memories",
+    recapReact: "Reactions",
+    recapCheck: "Check-ins",
+    recapFooter: "Vibe meter is… surprisingly accurate 😄",
+
+    moodBoardEmpty: "No one checked in yet. Want to start? 🙂",
+    awardsNone: "No awards yet.",
+
+    reactSelectErr: "REACTION SELECT ERROR:\n",
+    reactInsertErr: "REACTION INSERT ERROR:\n",
+    reactDeleteErr: "REACTION DELETE ERROR:\n",
+    badMemoryId: "Bad memory id (not a number): "
+  },
+
+  ru: {
+    roomTitle: "🏠 Комната:",
+    appTitle: "Holiday Harmony",
+    appSubtitle: "Семейная мини-игра: собираем тёплые моменты и держим атмосферу.",
+
+    soundLabel: "🔊 Звук",
+    party: "🎉 Пати",
+
+    missionTitle: "🎯 Мягкий вызов на сегодня",
+    missionDone: "✅ Сделано",
+    missionNew: "🎲 Новый (только мне)",
+    missionHint: "Общий вызов дня + личный «переброс».",
+
+    dashTitle: "📊 Семейная панель",
+    kpiMemoriesLabel: "Тёплых моментов сегодня",
+    kpiCheckinsLabel: "Чек-ины настроения сегодня",
+    kpiMoodLabel: "Вайб дня",
+    kpiReactsLabel: "Реакций сегодня",
+
+    checkinTitle: "✅ Чек-ин настроения",
+    namePh: "Ваше имя",
+    checkinHint: "Выберите настроение (можно менять позже).",
+    calm: "Спокойно",
+    okay: "Норм",
+    overloaded: "Перегруз",
+    resetMoment: "🧯 Пауза-перезагрузка",
+    choreRoulette: "🎡 Рулетка дел",
+
+    awardsTitle: "🏆 Награды",
+    awardsHint: "Только добрые награды. Без подколов 😄",
+
+    activityTitle: "🎲 Генератор активности",
+    activityBtn: "Дай идею",
+    activityHint: "Кнопка спасения: «что делаем?»",
+
+    boardTitle: "🧾 Доска настроения",
+    boardHint: "Кто как отметился сегодня.",
+
+    vaultTitle: "✨ Копилка моментов",
+    momentPh: "Тёплый момент (например: посмеялись за завтраком)",
+    post: "Добавить момент",
+    reactionsLabel: "Реакции:",
+    reactionsHint: "Нажмите ❤️ 😂 ⭐ на любом моменте (повторно — убрать).",
+
+    tipsTitle: "📌 Быстрые подсказки",
+    tipBtn: "Дай подсказку",
+    tipsHint: "Короткие идеи, чтобы сохранить тепло.",
+
+    pleaseName: "Сначала введите имя 🙂",
+    saving: "Сохраняю…",
+    checkedIn: "Отмечено ✅",
+    posted: "Добавлено ✅",
+    fillNameMoment: "Введите имя и текст момента.",
+
+    vibeNoCheckins: "Пока нет чек-инов",
+    vibeCalm: "😇 Спокойно",
+    vibeOkay: "😐 Норм",
+    vibeOver: "😤 Перегруз",
+
+    cozyStart: "🙂 Разогреваемся",
+    goodVibes: "🙂 Хороший вайб",
+    greatDay: "😄 Прям тепло пошло",
+    gentleReset: "🧯 Нужна мягкая пауза",
+
+    cozyNote: "Добавьте один тёплый момент (даже маленький).",
+    goodNote: "Класс. Лента тепла растёт.",
+    greatNote: "Еда, смех и чуть отдыха — идеально.",
+    resetNote: "Чай/прогулка часто спасают вечер.",
+
+    recapTitle: "Итог дня:",
+    recapMem: "Моменты",
+    recapReact: "Реакции",
+    recapCheck: "Чек-ины",
+    recapFooter: "Шкала вайба… подозрительно точная 😄",
+
+    moodBoardEmpty: "Пока никто не отметился. Начнём? 🙂",
+    awardsNone: "Пока нет наград.",
+
+    reactSelectErr: "ОШИБКА SELECT реакций:\n",
+    reactInsertErr: "ОШИБКА INSERT реакций:\n",
+    reactDeleteErr: "ОШИБКА DELETE реакций:\n",
+    badMemoryId: "Плохой id момента (не число): "
+  }
+};
+
+function getLang() { return localStorage.getItem("hh_lang") || "en"; }
+function setLang(v) { localStorage.setItem("hh_lang", v); }
+let LANG = getLang();
+
+function t(key) {
+  return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key;
+}
+
+function applyLanguage() {
+  // Static text
+  document.getElementById("roomTitle").childNodes[0].textContent = t("roomTitle") + " ";
+  document.getElementById("appTitle").textContent = t("appTitle");
+  document.getElementById("appSubtitle").textContent = t("appSubtitle");
+
+  document.getElementById("soundLabel").textContent = t("soundLabel");
+  partyBtn.textContent = t("party");
+
+  document.getElementById("missionTitle").textContent = t("missionTitle");
+  missionDoneBtn.textContent = t("missionDone");
+  missionNewBtn.textContent = t("missionNew");
+  document.getElementById("missionHint").textContent = t("missionHint");
+
+  document.getElementById("dashTitle").textContent = t("dashTitle");
+  document.getElementById("kpiMemoriesLabel").textContent = t("kpiMemoriesLabel");
+  document.getElementById("kpiCheckinsLabel").textContent = t("kpiCheckinsLabel");
+  document.getElementById("kpiMoodLabel").textContent = t("kpiMoodLabel");
+  document.getElementById("kpiReactsLabel").textContent = t("kpiReactsLabel");
+
+  document.getElementById("checkinTitle").textContent = t("checkinTitle");
+  nameEl.placeholder = t("namePh");
+  document.getElementById("checkinHint").textContent = t("checkinHint");
+
+  document.getElementById("moodGoodLabel").textContent = t("calm");
+  document.getElementById("moodOkLabel").textContent = t("okay");
+  document.getElementById("moodBadLabel").textContent = t("overloaded");
+
+  defuseBtn.textContent = t("resetMoment");
+  choreBtn.textContent = t("choreRoulette");
+
+  document.getElementById("awardsTitle").textContent = t("awardsTitle");
+  document.getElementById("awardsHint").textContent = t("awardsHint");
+
+  document.getElementById("activityTitle").textContent = t("activityTitle");
+  document.getElementById("activityBtn").textContent = t("activityBtn");
+  document.getElementById("activityHint").textContent = t("activityHint");
+
+  document.getElementById("boardTitle").textContent = t("boardTitle");
+  document.getElementById("boardHint").textContent = t("boardHint");
+
+  document.getElementById("vaultTitle").textContent = t("vaultTitle");
+  momentEl.placeholder = t("momentPh");
+  document.getElementById("postBtn").textContent = t("post");
+  document.getElementById("reactionsLabel").textContent = t("reactionsLabel");
+  document.getElementById("reactionsHint").textContent = t("reactionsHint");
+
+  document.getElementById("tipsTitle").textContent = t("tipsTitle");
+  newTipBtn.textContent = t("tipBtn");
+  document.getElementById("tipsHint").textContent = t("tipsHint");
+
+  // Re-render dynamic sections in new language
+  renderMission();
+  // tips will refresh on next loadAll; we also refresh immediately
+  loadAll();
+}
+
+langBtn?.addEventListener("click", () => {
+  playSound("tap");
+  LANG = (LANG === "en") ? "ru" : "en";
+  setLang(LANG);
+  applyLanguage();
+});
+
+// ==========================
+// Content pools (EN & RU)
+// ==========================
+function pools() {
+  if (LANG === "ru") {
+    return {
+      missions: [
+        "Скажите один искренний комплимент сегодня.",
+        "Чай-пауза: 15 минут без «разборов полётов».",
+        "5 минут — быстро навести порядок под музыку.",
+        "Спросите: «Что было лучшим сегодня?»",
+        "Сделайте одно маленькое доброе дело молча 😄",
+        "10 минут прогулки вместе (без тяжёлых тем).",
+        "Каждый рассказывает одну смешную историю из детства.",
+        "Сделайте что-то на кухне вместе.",
+        "Сделайте одну смешную семейную фотку.",
+        "Каждый предлагает фильм — потом голосуем."
+      ],
+      activities: [
+        "«Две правды и одна ложь» — по кругу",
+        "Выбор фильма: каждый предлагает один вариант, потом голосуем",
+        "10 минут прогулки (без тяжёлых тем)",
+        "Чай + сладкое: каждый говорит одно хорошее за день",
+        "Фото-челлендж: повторить старое семейное фото",
+        "Мини-викторина: «кто это сказал?» (семейные фразы)",
+        "Пазл/настолка на 20 минут",
+        "Командная кухня: один режет, один мешает, один пробует",
+        "5 минут уборки под музыку",
+        "История дня: каждый делится одним тёплым воспоминанием"
+      ],
+      defuse: [
+        "Пауза: 3 медленных вдоха. Потом — мягче голос 🙂",
+        "Мини-перерыв: вода + улыбка. Команда «семья» снова онлайн.",
+        "Сменить сцену: чай/прогулка/уютная активность на 10 минут.",
+        "Круг комплиментов: по одному искреннему предложению.",
+        "Режим юмора: скажите претензию как злодей из мультфильма.",
+        "Мирная взятка: принесите перекус. Перекус решает многое.",
+        "Сначала доброта, потом правота. Работает странно хорошо."
+      ],
+      chores: [
+        "Ты моешь посуду 🫧",
+        "Ты вытираешь посуду 🍽️",
+        "Ты накрываешь на стол 🧂",
+        "Ты выбираешь музыку 🎵",
+        "Ты делаешь чай ☕",
+        "Ты 5 минут убираешься 🧹",
+        "Ты отдыхаешь — заслужил(а) 😌",
+        "Ты выбираешь фильм 🎬"
+      ]
+    };
+  }
+
+  return {
+    missions: [
+      "Say one sincere compliment to someone today.",
+      "Tea break: 15 minutes with no problem-solving.",
+      "5-minute tidy sprint with music.",
+      "Ask someone: ‘What was the best part of your day?’",
+      "Do one small helpful thing without announcing it 😄",
+      "Take a 10-minute walk together (no heavy topics).",
+      "Everyone shares one funny childhood memory.",
+      "Kitchen teamwork: make one thing together.",
+      "Photo moment: take a goofy group selfie.",
+      "Movie vote: everyone suggests 1 title, then vote."
+    ],
+    activities: [
+      "2 Truths and a Lie (one round each)",
+      "Pick a movie: everyone suggests 1 title, then vote",
+      "10-minute walk together (no big topics — just fresh air 😄)",
+      "Tea + dessert: each person says one good thing from today",
+      "Photo challenge: recreate an old family photo pose",
+      "Mini quiz: 'Who said this?' (family quotes edition)",
+      "Puzzle/board game for 20 minutes",
+      "Kitchen teamwork: one person chops, one stirs, one tastes",
+      "Quick tidy sprint: 5 minutes with music",
+      "Story time: each person shares one warm memory"
+    ],
+    defuse: [
+      "Reset moment: 3 slow breaths. Then softer voices. 🙂",
+      "Quick pause: water + a small smile. Team ‘family’ is back online.",
+      "Switch scene: tea, a short walk, or a cozy activity. Keep it light for 10 minutes.",
+      "Compliment round: one sincere sentence each.",
+      "Humor mode: say your complaint like a Disney villain.",
+      "Peace offering: bring a snack. Snacks solve many mysteries.",
+      "Kind first, correct later. Works weirdly well."
+    ],
+    chores: [
+      "You wash dishes 🫧",
+      "You dry dishes 🍽️",
+      "You set the table 🧂",
+      "You choose music 🎵",
+      "You make tea ☕",
+      "You do a 5-minute tidy sprint 🧹",
+      "You rest — you earned it 😌",
+      "You pick the movie 🎬"
+    ]
+  };
+}
+
+// ==========================
 // Today’s Mission (no DB)
 // ==========================
-const missionPool = [
-  "Say one sincere compliment to someone today.",
-  "Tea break: 15 minutes with no problem-solving.",
-  "5-minute tidy sprint with music.",
-  "Ask someone: ‘What was the best part of your day?’",
-  "Do one small helpful thing without announcing it 😄",
-  "Take a 10-minute walk together (no heavy topics).",
-  "Everyone shares one funny childhood memory.",
-  "Kitchen teamwork: make one thing together.",
-  "Photo moment: take a goofy group selfie.",
-  "Movie vote: everyone suggests 1 title, then vote."
-];
-
 function hashStringToInt(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
   return h;
 }
+
 function missionKeyBase() { return `hh_mission_${room}_${todayISODate()}`; }
 function myMissionOverrideKey() { return `${missionKeyBase()}_override_${DEVICE_ID}`; }
 function missionDoneKey() {
   const name = ((nameEl?.value || getSavedName()) || "anon").trim().toLowerCase();
   return `${missionKeyBase()}_done_${name}_${DEVICE_ID}`;
 }
-function getTodaysMissionIndex() {
+
+function getTodaysMissionIndex(missionList) {
   const baseSeed = `${room}|${todayISODate()}`;
-  return hashStringToInt(baseSeed) % missionPool.length;
+  return hashStringToInt(baseSeed) % missionList.length;
 }
+
 function renderMission() {
+  const { missions } = pools();
   const override = localStorage.getItem(myMissionOverrideKey());
-  const idx = override ? Number(override) : getTodaysMissionIndex();
-  const mission = missionPool[(Number.isFinite(idx) ? idx : 0) % missionPool.length];
+  const idx = override ? Number(override) : getTodaysMissionIndex(missions);
+  const mission = missions[(Number.isFinite(idx) ? idx : 0) % missions.length];
   const done = localStorage.getItem(missionDoneKey()) === "1";
-  missionOut.innerHTML = `<b>Today:</b> ${escapeHtml(mission)}<br><small>${done ? "✅ You marked it done." : "Not marked done yet."}</small>`;
+  missionOut.innerHTML = `<b>${escapeHtml(mission)}</b><br><small>${done ? "✅" : ""}</small>`;
 }
+
 missionDoneBtn?.addEventListener("click", () => {
   playSound("tap");
   const name = (nameEl.value || "").trim();
-  if (!name) return alert("Please enter your name first 🙂");
+  if (!name) return alert(t("pleaseName"));
   localStorage.setItem(missionDoneKey(), "1");
   renderMission();
   playSound("success");
 });
+
 missionNewBtn?.addEventListener("click", () => {
   playSound("tap");
-  localStorage.setItem(myMissionOverrideKey(), String(Math.floor(Math.random() * missionPool.length)));
+  const { missions } = pools();
+  localStorage.setItem(myMissionOverrideKey(), String(Math.floor(Math.random() * missions.length)));
   renderMission();
   playSound("success");
 });
+
 renderMission();
 
 // ==========================
-// Activity / Reset / Chores
+// Buttons: Activity / Reset / Chores
 // ==========================
-const activities = [
-  "2 Truths and a Lie (one round each)",
-  "Pick a movie: everyone suggests 1 title, then vote",
-  "10-minute walk together (no big topics — just fresh air 😄)",
-  "Tea + dessert: each person says one good thing from today",
-  "Photo challenge: recreate an old family photo pose",
-  "Mini quiz: 'Who said this?' (family quotes edition)",
-  "Puzzle/board game for 20 minutes",
-  "Kitchen teamwork: one person chops, one stirs, one tastes",
-  "Quick tidy sprint: 5 minutes with music",
-  "Story time: each person shares one warm memory"
-];
 document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
+  const { activities } = pools();
   const pick = activities[Math.floor(Math.random() * activities.length)];
   document.getElementById("activityOut").innerHTML = `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
-const defuseLines = [
-  "Reset moment: 3 slow breaths. Then softer voices. 🙂",
-  "Quick pause: water + a small smile. Team ‘family’ is back online.",
-  "Switch scene: tea, a short walk, or a cozy activity. Keep it light for 10 minutes.",
-  "Compliment round: one sincere sentence each.",
-  "Humor mode: say your complaint like a Disney villain.",
-  "Peace offering: bring a snack. Snacks solve many mysteries.",
-  "Kind first, correct later. Works weirdly well."
-];
 defuseBtn?.addEventListener("click", () => {
   playSound("tap");
-  const pick = defuseLines[Math.floor(Math.random() * defuseLines.length)];
+  const { defuse } = pools();
+  const pick = defuse[Math.floor(Math.random() * defuse.length)];
   defuseOut.innerHTML = `
     <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      <b>🧯 Reset Moment:</b> ${escapeHtml(pick)}<br>
-      <small>Try: tea • walk • music • activity button</small>
+      <b>${escapeHtml(pick)}</b>
     </div>`;
 });
 
-const chores = [
-  "You wash dishes 🫧",
-  "You dry dishes 🍽️",
-  "You set the table 🧂",
-  "You choose music 🎵",
-  "You make tea ☕",
-  "You do a 5-minute tidy sprint 🧹",
-  "You rest — you earned it 😌",
-  "You pick the movie 🎬",
-];
 choreBtn?.addEventListener("click", () => {
   playSound("tap");
+  const { chores } = pools();
   const pick = chores[Math.floor(Math.random() * chores.length)];
   defuseOut.innerHTML = `
     <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      <b>🎡 Chore Roulette:</b> ${escapeHtml(pick)}<br>
-      <small>Rule: we do it with good humor.</small>
+      <b>${escapeHtml(pick)}</b>
     </div>`;
 });
 
@@ -272,33 +583,37 @@ const moodButtons = {
   ok: document.getElementById("moodOk"),
   bad: document.getElementById("moodBad"),
 };
+
 function clearMoodSelection() {
   Object.values(moodButtons).forEach(btn => btn?.classList.remove("moodSelected"));
 }
+
 async function setMood(mood) {
   const name = (nameEl.value || "").trim();
-  if (!name) { moodStatusEl.textContent = "Please enter your name first."; return; }
+  if (!name) { moodStatusEl.textContent = t("pleaseName"); return; }
 
-  moodStatusEl.textContent = "Saving…";
+  moodStatusEl.textContent = t("saving");
   playSound("tap");
 
   const checkin_date = todayISODate();
+
   const { error } = await supa
     .from("checkins")
     .upsert([{ room_code: room, name, checkin_date, mood }],
       { onConflict: "room_code,name,checkin_date" });
 
-  if (error) { moodStatusEl.textContent = "Mood save error: " + error.message; return; }
+  if (error) { moodStatusEl.textContent = "Error: " + error.message; return; }
 
   clearMoodSelection();
   if (mood === "good") moodButtons.good?.classList.add("moodSelected");
   if (mood === "ok") moodButtons.ok?.classList.add("moodSelected");
   if (mood === "bad") moodButtons.bad?.classList.add("moodSelected");
 
-  moodStatusEl.textContent = "Checked in ✅";
+  moodStatusEl.textContent = t("checkedIn");
   playSound("success");
   await loadAll();
 }
+
 moodButtons.good?.addEventListener("click", () => setMood("good"));
 moodButtons.ok?.addEventListener("click", () => setMood("ok"));
 moodButtons.bad?.addEventListener("click", () => setMood("bad"));
@@ -316,36 +631,34 @@ function loadMyMoodSelection(checkinsToday) {
 }
 
 // ==========================
-// Reactions (debug-proof)
+// Reactions
 // ==========================
-async function toggleReaction(memoryId, emoji) {
+async function toggleReaction(memoryIdRaw, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
-  const memIdNum = Number(memoryId);
-if (!Number.isFinite(memIdNum)) {
-  alert("Bad memory id: " + memoryId);
-  return;
-}
+  const memIdNum = Number(memoryIdRaw);
 
+  if (!Number.isFinite(memIdNum)) {
+    alert(t("badMemoryId") + memoryIdRaw);
+    return;
+  }
 
   playSound("tap");
 
-  // 1) SELECT existing
   const { data: existing, error: selErr } = await supa
     .from("reactions")
     .select("id")
     .eq("room_code", room)
-    .eq("memory_id", memoryId)
+    .eq("memory_id", memIdNum)
     .eq("emoji", emoji)
     .eq("device_id", DEVICE_ID)
     .limit(1);
 
   if (selErr) {
-    alert("REACTION SELECT ERROR:\n" + selErr.message);
+    alert(t("reactSelectErr") + selErr.message);
     debug("❌ Reaction SELECT error: " + selErr.message);
     return;
   }
 
-  // 2) Toggle: delete if exists, else insert
   if (existing && existing.length) {
     const { error: delErr } = await supa
       .from("reactions")
@@ -353,23 +666,17 @@ if (!Number.isFinite(memIdNum)) {
       .eq("id", existing[0].id);
 
     if (delErr) {
-      alert("REACTION DELETE ERROR:\n" + delErr.message);
+      alert(t("reactDeleteErr") + delErr.message);
       debug("❌ Reaction DELETE error: " + delErr.message);
       return;
     }
   } else {
     const { error: insErr } = await supa
       .from("reactions")
-      .insert([{
-        room_code: room,
-        memory_id: memoryId,
-        emoji,
-        name,
-        device_id: DEVICE_ID
-      }]);
+      .insert([{ room_code: room, memory_id: memIdNum, emoji, name, device_id: DEVICE_ID }]);
 
     if (insErr) {
-      alert("REACTION INSERT ERROR:\n" + insErr.message);
+      alert(t("reactInsertErr") + insErr.message);
       debug("❌ Reaction INSERT error: " + insErr.message);
       return;
     }
@@ -379,7 +686,6 @@ if (!Number.isFinite(memIdNum)) {
   await loadAll();
 }
 
-// Event delegation: always works
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest(".reactBtn");
   if (!btn) return;
@@ -389,18 +695,106 @@ listEl?.addEventListener("click", async (e) => {
 });
 
 // ==========================
-// Dashboard + vibe bar
+// Tips (language-aware)
+// ==========================
+function pickRandom(arr, count = 3) {
+  const copy = [...arr];
+  const out = [];
+  while (copy.length && out.length < count) out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+  return out;
+}
+
+function buildTipsPool(memoriesTodayCount, checkinsToday) {
+  const { counts } = summarizeMood(checkinsToday);
+  const tips = [];
+
+  if (LANG === "ru") {
+    if (checkinsToday.length === 0) tips.push("✅ Попросите всех отметиться — один тап улучшает атмосферу.");
+    if (memoriesTodayCount === 0) tips.push("✨ Добавьте один тёплый момент. «Хороший чай» тоже считается.");
+    if (counts.bad >= 2) tips.push("🧯 Если перегруз: чай/прогулка часто спасают вечер.");
+
+    tips.push("🫶 Круг комплиментов: по одному искреннему предложению.");
+    tips.push("🎬 Выбор фильма: каждый предлагает по одному — потом голосование.");
+    tips.push("🧹 5 минут уборки под музыку = быстрый ресет.");
+    tips.push("🍵 Правило чая: без «разборов» во время чая.");
+    tips.push("🎲 Когда разговор вязнет — жмите «Генератор активности».");
+    tips.push("😂 «А помнишь…» — лучший семейный клей.");
+    tips.push("⭐ Ставьте реакции — вайб растёт быстрее.");
+    return tips;
+  }
+
+  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
+  if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
+  if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
+
+  tips.push("🫶 Compliment round: one sincere sentence each.");
+  tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
+  tips.push("🧹 5-minute tidy sprint with music = fast reset.");
+  tips.push("🍵 Tea break rule: no problem-solving during tea.");
+  tips.push("🎲 Use Activity Generator when conversation gets stuck.");
+  tips.push("😂 ‘Remember when…’ story time is the best glue.");
+  tips.push("⭐ React to memories — it boosts the vibe fast.");
+  return tips;
+}
+
+let lastTipsPool = [];
+newTipBtn?.addEventListener("click", () => {
+  playSound("tap");
+  if (!lastTipsPool.length) return;
+  tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(tip => `<div style="margin:10px 0;">${escapeHtml(tip)}</div>`).join("");
+});
+
+// ==========================
+// Post memory
+// ==========================
+async function postMemory() {
+  statusEl.textContent = "";
+  const name = (nameEl.value || "").trim();
+  const moment = (momentEl.value || "").trim();
+
+  if (!name || !moment) {
+    statusEl.textContent = t("fillNameMoment");
+    return;
+  }
+
+  playSound("tap");
+
+  const { error } = await supa.from("memories").insert([{ room_code: room, name, moment }]);
+  if (error) {
+    statusEl.textContent = "Error: " + error.message;
+    return;
+  }
+
+  momentEl.value = "";
+  statusEl.textContent = t("posted");
+  playSound("success");
+  await loadAll();
+}
+document.getElementById("postBtn")?.addEventListener("click", postMemory);
+
+// ==========================
+// Dashboard + vibe bar (with pulse animation)
 // ==========================
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
   for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
-  let vibe = "No check-ins yet";
+  let vibe = t("vibeNoCheckins");
   if (checkinsToday.length > 0) {
-    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = "😤 Overloaded";
-    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = "😇 Calm";
-    else vibe = "😐 Okay";
+    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
+    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
+    else vibe = t("vibeOkay");
   }
   return { counts, vibe };
+}
+
+let lastVibePercent = null;
+
+function pulseVibe() {
+  if (!vibeWrapEl) return;
+  vibeWrapEl.classList.remove("vibePulse");
+  // force reflow so animation can retrigger
+  void vibeWrapEl.offsetWidth;
+  vibeWrapEl.classList.add("vibePulse");
 }
 
 function setVibeBar(percent, vibeText) {
@@ -408,12 +802,20 @@ function setVibeBar(percent, vibeText) {
   const p = Math.max(0, Math.min(100, percent));
   vibeBarEl.style.width = p + "%";
 
-  if (String(vibeText).includes("Overloaded")) {
+  // Color set based on vibe
+  if (String(vibeText).includes("Перегруз") || String(vibeText).includes("Overloaded")) {
     vibeBarEl.style.background = "linear-gradient(90deg, #ffb3b3, #ffd1d1)";
-  } else if (String(vibeText).includes("Calm")) {
+  } else if (String(vibeText).includes("Спокой") || String(vibeText).includes("Calm")) {
     vibeBarEl.style.background = "linear-gradient(90deg, #b8f0d0, #d6ffe9)";
   } else {
     vibeBarEl.style.background = "linear-gradient(90deg, #ffe7b3, #fff2d6)";
+  }
+  vibeBarEl.style.backgroundSize = "200% 100%";
+
+  // Pulse only if changed noticeably (prevents constant pulsing)
+  if (lastVibePercent === null || Math.abs(p - lastVibePercent) >= 3) {
+    pulseVibe();
+    lastVibePercent = p;
   }
 }
 
@@ -427,13 +829,13 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
 
   const el = document.getElementById("happinessLevel");
 
-  let label = "🙂 Cozy start";
-  let note = "Post one happy moment (even a tiny one).";
-  if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) { label = "🙂 Good vibes"; note = "Nice. The warm timeline is growing."; }
-  if (memoriesTodayCount >= 4 && counts.bad === 0) { label = "😄 Great day together"; note = "Food, laughs, and a little rest. Perfect."; }
-  if (counts.bad >= 2 && checkinsToday.length >= 3) { label = "🧯 Gentle reset"; note = "Tea/walk mode can save the evening."; }
+  let label = t("cozyStart");
+  let note = t("cozyNote");
+  if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) { label = t("goodVibes"); note = t("goodNote"); }
+  if (memoriesTodayCount >= 4 && counts.bad === 0) { label = t("greatDay"); note = t("greatNote"); }
+  if (counts.bad >= 2 && checkinsToday.length >= 3) { label = t("gentleReset"); note = t("resetNote"); }
 
-  el.innerHTML = `<b>${label}</b><br><small>${escapeHtml(note)}</small>`;
+  el.innerHTML = `<b>${escapeHtml(label)}</b><br><small>${escapeHtml(note)}</small>`;
 
   const badCount = (checkinsToday || []).filter(c => c.mood === "bad").length;
   const scoreRaw = (memoriesTodayCount * 12) + (reactionsTodayCount * 3) + (checkinsToday.length * 8) - (badCount * 12);
@@ -441,21 +843,25 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
   setVibeBar(score, vibe);
 
   recapOut.innerHTML = `
-    <b>Today recap:</b><br>
-    • Memories: <b>${memoriesTodayCount}</b> • Reactions: <b>${reactionsTodayCount}</b><br>
-    • Check-ins: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
-    <small>Vibe meter is… surprisingly accurate 😄</small>
+    <b>${escapeHtml(t("recapTitle"))}</b><br>
+    • ${escapeHtml(t("recapMem"))}: <b>${memoriesTodayCount}</b> • ${escapeHtml(t("recapReact"))}: <b>${reactionsTodayCount}</b><br>
+    • ${escapeHtml(t("recapCheck"))}: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
+    <small>${escapeHtml(t("recapFooter"))}</small>
   `;
 }
 
 function updateMoodBoard(checkinsToday) {
   if (!moodBoardEl) return;
   if (checkinsToday.length === 0) {
-    moodBoardEl.innerHTML = `<small>No one checked in yet. Want to start? 🙂</small>`;
+    moodBoardEl.innerHTML = `<small>${escapeHtml(t("moodBoardEmpty"))}</small>`;
     return;
   }
+
   const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
-  const moodLabel = (m) => m === "good" ? "calm" : m === "ok" ? "ok" : "overloaded";
+  const moodLabel = (m) => {
+    if (LANG === "ru") return m === "good" ? "спокойно" : m === "ok" ? "норм" : "перегруз";
+    return m === "good" ? "calm" : m === "ok" ? "ok" : "overloaded";
+  };
 
   moodBoardEl.innerHTML = checkinsToday
     .sort((a,b) => a.name.localeCompare(b.name))
@@ -476,7 +882,7 @@ function updateAwards(memories, checkinsToday, reactionsByMemory) {
 
   let topMemory = null;
   for (const m of memories) {
-    const cnt = reactionsByMemory[m.id]?.total || 0;
+    const cnt = reactionsByMemory[String(m.id)]?.total || 0;
     if (!topMemory || cnt > topMemory.cnt) topMemory = { cnt, name: m.name };
   }
 
@@ -484,128 +890,22 @@ function updateAwards(memories, checkinsToday, reactionsByMemory) {
   for (const c of checkinsToday) moodNames[c.mood]?.push(c.name);
 
   const awards = [];
-  if (mostMemories) awards.push(`✨ <b>Memory Maker</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
-  if (moodNames.good?.[0]) awards.push(`🕊 <b>Calm Star</b>: ${escapeHtml(moodNames.good[0])}`);
-  if (moodNames.ok?.[0]) awards.push(`🙂 <b>Steady Support</b>: ${escapeHtml(moodNames.ok[0])}`);
-  if (moodNames.bad?.[0]) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(moodNames.bad[0])}`);
-  if (topMemory && topMemory.cnt > 0) awards.push(`⭐ <b>Most Loved Moment</b>: ${escapeHtml(topMemory.name)} (${topMemory.cnt} reactions)`);
+  const awardName = (en, ru) => LANG === "ru" ? ru : en;
+
+  if (mostMemories) awards.push(`✨ <b>${awardName("Memory Maker", "Главный хранитель моментов")}</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val})`);
+  if (moodNames.good?.[0]) awards.push(`🕊 <b>${awardName("Calm Star", "Спокойная звезда")}</b>: ${escapeHtml(moodNames.good[0])}`);
+  if (moodNames.ok?.[0]) awards.push(`🙂 <b>${awardName("Steady Support", "Опора дня")}</b>: ${escapeHtml(moodNames.ok[0])}`);
+  if (moodNames.bad?.[0]) awards.push(`🫶 <b>${awardName("Needs a Hug", "Нужна обнимашка")}</b>: ${escapeHtml(moodNames.bad[0])}`);
+  if (topMemory && topMemory.cnt > 0) awards.push(`⭐ <b>${awardName("Most Loved Moment", "Самый любимый момент")}</b>: ${escapeHtml(topMemory.name)} (${topMemory.cnt})`);
 
   awardsOut.innerHTML = `
     <div style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : "<small>No awards yet.</small>"}
+      ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : `<small>${escapeHtml(t("awardsNone"))}</small>`}
     </div>`;
 }
 
 // ==========================
-// Tips
-// ==========================
-function pickRandom(arr, count = 3) {
-  const copy = [...arr];
-  const out = [];
-  while (copy.length && out.length < count) out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
-  return out;
-}
-
-function buildTipsPool(memoriesTodayCount, checkinsToday) {
-  const { counts } = summarizeMood(checkinsToday);
-  const tips = [];
-  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
-  if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
-  if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
-  tips.push("🫶 Compliment round: one sincere sentence each.");
-  tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
-  tips.push("🧹 5-minute tidy sprint with music = fast reset.");
-  tips.push("🍵 Tea break rule: no problem-solving during tea.");
-  tips.push("🎲 Use Activity Generator when conversation gets stuck.");
-  tips.push("😂 ‘Remember when…’ story time is the best glue.");
-  tips.push("⭐ React to memories — it boosts the vibe fast.");
-  return tips;
-}
-
-let lastTipsPool = [];
-newTipBtn?.addEventListener("click", () => {
-  playSound("tap");
-  if (!lastTipsPool.length) return;
-  tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
-});
-
-// ==========================
-// Post memory
-// ==========================
-async function postMemory() {
-  statusEl.textContent = "";
-  const name = (nameEl.value || "").trim();
-  const moment = (momentEl.value || "").trim();
-
-  if (!name || !moment) {
-    statusEl.textContent = "Please fill your name + the moment.";
-    return;
-  }
-
-  playSound("tap");
-
-  const { error } = await supa.from("memories").insert([{ room_code: room, name, moment }]);
-  if (error) {
-    statusEl.textContent = "Post error: " + error.message;
-    return;
-  }
-
-  momentEl.value = "";
-  statusEl.textContent = "Posted ✅";
-  playSound("success");
-  await loadAll();
-}
-document.getElementById("postBtn")?.addEventListener("click", postMemory);
-
-// ==========================
-// Supabase reaction self-test
-// ==========================
-async function reactionsSelfTest() {
-  // This tells us if the database allows select/insert/delete for anon users.
-  try {
-    const pingEmoji = "TEST";
-    const fakeMemoryId = 0; // will fail if memory_id must reference a real memory (that's OK; error will tell us)
-    const name = "selftest";
-
-    // Try SELECT
-    const sel = await supa.from("reactions").select("id").limit(1);
-    if (sel.error) {
-      debug("❌ Reactions SELECT blocked: " + sel.error.message);
-      return;
-    }
-
-    // Try INSERT (may fail due to constraints; we want the exact message)
-    const ins = await supa.from("reactions").insert([{
-      room_code: room,
-      memory_id: fakeMemoryId,
-      emoji: pingEmoji,
-      name,
-      device_id: DEVICE_ID
-    }]).select("id");
-
-    if (ins.error) {
-      debug("⚠️ Reactions INSERT test failed (good clue): " + ins.error.message);
-      return;
-    }
-
-    // Try DELETE test row
-    const newId = ins.data?.[0]?.id;
-    if (newId) {
-      const del = await supa.from("reactions").delete().eq("id", newId);
-      if (del.error) {
-        debug("⚠️ Reactions DELETE test failed: " + del.error.message);
-        return;
-      }
-    }
-
-    debug("✅ Reactions SELECT/INSERT/DELETE looks OK.");
-  } catch (e) {
-    debug("⚠️ Reactions self-test exception: " + (e?.message || String(e)));
-  }
-}
-
-// ==========================
-// Load + render
+// Load + render (no blinking)
 // ==========================
 let lastRenderKey = "";
 
@@ -649,13 +949,13 @@ async function loadAll() {
 
     lastTipsPool = buildTipsPool(memoriesTodayCount, checkinsToday);
     if (tipsOut && tipsOut.textContent.includes("Loading")) {
-      tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
+      tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(tip => `<div style="margin:10px 0;">${escapeHtml(tip)}</div>`).join("");
     }
 
     loadMyMoodSelection(checkinsToday);
     renderMission();
 
-    // Render only when changed (stops blinking)
+    // Render memories only when changed
     const renderKey = memories
       .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
       .join("||");
@@ -687,7 +987,7 @@ async function loadAll() {
   }
 }
 
-// Start
-reactionsSelfTest();   // gives us clues in the debug pill
+// Start: apply saved language
+applyLanguage();
 setInterval(loadAll, 5000);
 loadAll();
