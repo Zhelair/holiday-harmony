@@ -1,23 +1,26 @@
-// ========== DEBUG ==========
+// ==========================
+// Holiday Harmony — app.js
+// ==========================
+
 const debugEl = document.getElementById("debug");
 function debug(msg) {
   if (debugEl) debugEl.textContent = msg;
   console.log("[HH]", msg);
 }
 
-// If Supabase UMD didn’t load, we can’t do anything.
 if (!window.supabase || !window.supabase.createClient) {
-  debug("❌ Supabase library did NOT load. Try: different browser / disable adblock / use Wi-Fi.");
+  debug("❌ Supabase library not loaded (CDN blocked?). Try another browser / disable adblock / use Wi-Fi.");
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ Paste your Supabase URL + anon key here:
+// ✅ PASTE REAL VALUES (KEEP QUOTES!)
+
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
-if (SUPABASE_URL.includes("https://ubthnjsdxuhjyjnrxube.supabase.co") || SUPABASE_ANON_PUBLIC_KEY.includes("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g")) {
-  debug("❌ Supabase keys are still placeholders. Paste URL + anon key in app.js.");
-  // Don’t throw; let UI still show.
+if (!SUPABASE_URL || !SUPABASE_ANON_PUBLIC_KEY) {
+  debug("❌ Missing Supabase keys in app.js");
+  throw new Error("Missing Supabase keys");
 }
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
@@ -25,18 +28,20 @@ debug("✅ JS running. Connecting…");
 
 // ---- URL params
 const params = new URLSearchParams(location.search);
-const room = params.get("room")?.trim();
+const room = (params.get("room") || "").trim();
+const suggestedName = (params.get("name") || "").trim();
+const suggestedRole = (params.get("role") || "").trim();
 
-const suggestedName = params.get("name")?.trim();
-const suggestedRole = params.get("role")?.trim();
+if (!room) {
+  alert("No room code found. Go back and enter a room code.");
+  location.href = "index.html";
+}
 
 // ---- DOM
 const roomLabel = document.getElementById("roomLabel");
 const shareLink = document.getElementById("shareLink");
-
 const nameEl = document.getElementById("name");
 const roleLineEl = document.getElementById("roleLine");
-
 const momentEl = document.getElementById("moment");
 const statusEl = document.getElementById("status");
 const listEl = document.getElementById("list");
@@ -58,11 +63,6 @@ const newTipBtn = document.getElementById("newTipBtn");
 
 const privateToggle = document.getElementById("privateToggle");
 const privateList = document.getElementById("privateList");
-
-if (!room) {
-  alert("No room code found. Go back and enter a room code.");
-  location.href = "index.html";
-}
 
 roomLabel.textContent = room;
 
@@ -97,11 +97,10 @@ function playSound(which) {
 function loadIdentity() {
   const savedName = localStorage.getItem("hh_name") || "";
   const savedRole = localStorage.getItem("hh_role") || "";
-
   const name = suggestedName || savedName;
   const role = suggestedRole || savedRole;
 
-  if (name && nameEl) nameEl.value = name;
+  if (name) nameEl.value = name;
   roleLineEl.textContent = role ? `Role: ${role}` : "";
 
   if (name) localStorage.setItem("hh_name", name);
@@ -109,7 +108,7 @@ function loadIdentity() {
 }
 loadIdentity();
 
-nameEl?.addEventListener("input", () => {
+nameEl.addEventListener("input", () => {
   const name = nameEl.value.trim();
   if (name) localStorage.setItem("hh_name", name);
 });
@@ -128,14 +127,14 @@ const activities = [
   "Story time: each person shares one warm memory"
 ];
 
-document.getElementById("activityBtn")?.addEventListener("click", () => {
+document.getElementById("activityBtn").addEventListener("click", () => {
   playSound("tap");
   const pick = activities[Math.floor(Math.random() * activities.length)];
   document.getElementById("activityOut").innerHTML =
     `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
-// ---- Reset Moment
+// ---- Reset Moment (friendly)
 const defuseLines = [
   "Reset moment: 3 slow breaths. Then we continue with softer voices. 🙂",
   "Quick pause: water + a small smile. Team ‘family’ is back online.",
@@ -149,7 +148,7 @@ const defuseLines = [
   "New plan: kind first, correct later. Works weirdly well."
 ];
 
-defuseBtn?.addEventListener("click", () => {
+defuseBtn.addEventListener("click", () => {
   playSound("tap");
   const pick = defuseLines[Math.floor(Math.random() * defuseLines.length)];
   defuseOut.innerHTML = `
@@ -171,7 +170,7 @@ const chores = [
   "You pick the movie 🎬",
 ];
 
-choreBtn?.addEventListener("click", () => {
+choreBtn.addEventListener("click", () => {
   playSound("tap");
   const pick = chores[Math.floor(Math.random() * chores.length)];
   defuseOut.innerHTML = `
@@ -189,7 +188,7 @@ const moodButtons = {
 };
 
 function clearMoodSelection() {
-  Object.values(moodButtons).forEach(btn => btn?.classList.remove("moodSelected"));
+  Object.values(moodButtons).forEach(btn => btn.classList.remove("moodSelected"));
 }
 
 async function setMood(mood) {
@@ -198,7 +197,6 @@ async function setMood(mood) {
 
   moodStatusEl.textContent = "Saving…";
   playSound("tap");
-
   const checkin_date = todayISODate();
 
   const { error } = await supa
@@ -209,18 +207,18 @@ async function setMood(mood) {
   if (error) { moodStatusEl.textContent = "Mood save error: " + error.message; return; }
 
   clearMoodSelection();
-  if (mood === "good") moodButtons.good?.classList.add("moodSelected");
-  if (mood === "ok") moodButtons.ok?.classList.add("moodSelected");
-  if (mood === "bad") moodButtons.bad?.classList.add("moodSelected");
+  if (mood === "good") moodButtons.good.classList.add("moodSelected");
+  if (mood === "ok") moodButtons.ok.classList.add("moodSelected");
+  if (mood === "bad") moodButtons.bad.classList.add("moodSelected");
 
   moodStatusEl.textContent = "Checked in ✅";
   playSound("success");
   await loadAll();
 }
 
-moodButtons.good?.addEventListener("click", () => setMood("good"));
-moodButtons.ok?.addEventListener("click", () => setMood("ok"));
-moodButtons.bad?.addEventListener("click", () => setMood("bad"));
+moodButtons.good.addEventListener("click", () => setMood("good"));
+moodButtons.ok.addEventListener("click", () => setMood("ok"));
+moodButtons.bad.addEventListener("click", () => setMood("bad"));
 
 function loadMyMoodSelection(checkinsToday) {
   const name = nameEl.value.trim();
@@ -229,30 +227,25 @@ function loadMyMoodSelection(checkinsToday) {
   if (!mine) return;
 
   clearMoodSelection();
-  if (mine.mood === "good") moodButtons.good?.classList.add("moodSelected");
-  if (mine.mood === "ok") moodButtons.ok?.classList.add("moodSelected");
-  if (mine.mood === "bad") moodButtons.bad?.classList.add("moodSelected");
+  if (mine.mood === "good") moodButtons.good.classList.add("moodSelected");
+  if (mine.mood === "ok") moodButtons.ok.classList.add("moodSelected");
+  if (mine.mood === "bad") moodButtons.bad.classList.add("moodSelected");
 }
 
-// ---- Private memories
+// ---- Private memories (local only)
 function privateKey() { return `hh_private_${room}_${todayISODate()}`; }
-
 function getPrivateMemories() {
   try { return JSON.parse(localStorage.getItem(privateKey()) || "[]"); }
   catch { return []; }
 }
-
 function addPrivateMemory(name, text) {
   const list = getPrivateMemories();
   list.unshift({ name, text, ts: new Date().toISOString() });
   localStorage.setItem(privateKey(), JSON.stringify(list.slice(0, 20)));
 }
-
 function renderPrivateMemories() {
   const list = getPrivateMemories();
-  if (!privateList) return;
   if (list.length === 0) { privateList.innerHTML = `<small>No private notes yet.</small>`; return; }
-
   privateList.innerHTML = `
     <div style="margin-top:10px;">
       <b>🔒 Private notes (this device only)</b>
@@ -274,7 +267,7 @@ async function postMemory() {
 
   playSound("tap");
 
-  if (privateToggle?.checked) {
+  if (privateToggle.checked) {
     addPrivateMemory(name, moment);
     momentEl.value = "";
     statusEl.textContent = "Saved privately 🔒";
@@ -291,13 +284,12 @@ async function postMemory() {
   playSound("success");
   await loadAll();
 }
-document.getElementById("postBtn")?.addEventListener("click", postMemory);
+document.getElementById("postBtn").addEventListener("click", postMemory);
 
 // ---- Dashboard helpers
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
   for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
-
   let vibe = "No check-ins yet";
   if (checkinsToday.length > 0) {
     if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = "😤 Overloaded";
@@ -309,7 +301,6 @@ function summarizeMood(checkinsToday) {
 
 function updateDashboard(memoriesTodayCount, checkinsToday) {
   const { counts, vibe } = summarizeMood(checkinsToday);
-
   kpiMemoriesEl.textContent = String(memoriesTodayCount);
   kpiCheckinsEl.textContent = String(checkinsToday.length);
   kpiMoodEl.textContent = vibe;
@@ -317,11 +308,9 @@ function updateDashboard(memoriesTodayCount, checkinsToday) {
   const el = document.getElementById("happinessLevel");
   let label = "🙂 Cozy start";
   let note = "Post one happy moment (even a tiny one) — it helps everyone notice the good.";
-
   if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) { label = "🙂 Good vibes"; note = "Nice. The warm timeline is growing."; }
-  if (memoriesTodayCount >= 4 && counts.bad === 0) { label = "😄 Great day together"; note = "Love this. Keep it simple: food, laughs, and rest."; }
+  if (memoriesTodayCount >= 4 && counts.bad === 0) { label = "😄 Great day together"; note = "Love this. Keep it simple: food, laughs, rest."; }
   if (counts.bad >= 2 && checkinsToday.length >= 3) { label = "🧯 Gentle reset"; note = "A short break can save the evening: tea, walk, music, or activity."; }
-
   el.innerHTML = `<b>${label}</b><br>${memoriesTodayCount} happy moments today • ${checkinsToday.length} mood check-ins<br><small>${escapeHtml(note)}</small>`;
 }
 
@@ -329,7 +318,6 @@ function updateMoodBoard(checkinsToday) {
   if (checkinsToday.length === 0) { moodBoardEl.innerHTML = `<small>No one checked in yet. Want to start? 🙂</small>`; return; }
   const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
   const moodLabel = (m) => m === "good" ? "calm" : m === "ok" ? "ok" : "overloaded";
-
   moodBoardEl.innerHTML = checkinsToday
     .sort((a,b) => a.name.localeCompare(b.name))
     .map(c => `<div style="padding:10px 12px; border:1px solid #e7e7ef; border-radius:14px; margin:8px 0; background:#fff;">
@@ -339,12 +327,11 @@ function updateMoodBoard(checkinsToday) {
 function updateAwards(memories, checkinsToday) {
   const byName = {};
   for (const m of memories) byName[m.name] = (byName[m.name] || 0) + 1;
-
   const top = Object.entries(byName).sort((a,b)=>b[1]-a[1])[0];
   const mostMemories = top ? { name: top[0], val: top[1] } : null;
 
   const moodNames = { good: [], ok: [], bad: [] };
-  for (const c of checkinsToday) moodNames[c.mood]?.push(c.name);
+  for (const c of checkinsToday) moodNames[c.mood].push(c.name);
 
   const awards = [];
   if (mostMemories) awards.push(`✨ <b>Memory Maker</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
@@ -372,23 +359,15 @@ function pickRandom(arr, count = 3) {
 function buildTipsPool(memoriesTodayCount, checkinsToday) {
   const { counts } = summarizeMood(checkinsToday);
   const tips = [];
-
   if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
   if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
-
-  if (counts.bad >= 2) {
-    tips.push("🧯 A couple people feel overloaded → tea/walk mode is perfect.");
-    tips.push("🎧 Soft music for 10 minutes changes the whole room.");
-  }
-
+  if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
   tips.push("🫶 Compliment round: one sincere sentence each.");
-  tips.push("🎬 Movie decision hack: everyone suggests 1 title, then vote.");
+  tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
   tips.push("🧹 5-minute tidy sprint with music = fast reset.");
   tips.push("🍵 Tea break rule: no problem-solving during tea.");
   tips.push("🎲 Use Activity Generator when conversation gets stuck.");
-  tips.push("👂 Ask 1 curious question before giving advice.");
   tips.push("😂 ‘Remember when…’ story time is the best glue.");
-
   return tips;
 }
 
@@ -399,18 +378,17 @@ function renderTips(tips) {
 function updateTips(memoriesTodayCount, checkinsToday) {
   lastMemoriesTodayCount = memoriesTodayCount;
   lastCheckinsToday = checkinsToday;
-
   lastTipsPool = buildTipsPool(memoriesTodayCount, checkinsToday);
   renderTips(pickRandom(lastTipsPool, 3));
 }
 
-newTipBtn?.addEventListener("click", () => {
+newTipBtn.addEventListener("click", () => {
   playSound("tap");
   if (!lastTipsPool.length) lastTipsPool = buildTipsPool(lastMemoriesTodayCount, lastCheckinsToday);
   renderTips(pickRandom(lastTipsPool, 3));
 });
 
-// ---- Stop blinking: render only when changed
+// ---- Stop blinking list
 let lastMemoriesRenderKey = "";
 
 // ---- Load all
