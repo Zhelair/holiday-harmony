@@ -320,7 +320,12 @@ function loadMyMoodSelection(checkinsToday) {
 // ==========================
 async function toggleReaction(memoryId, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
-  if (!memoryId) return;
+  const memIdNum = Number(memoryId);
+if (!Number.isFinite(memIdNum)) {
+  alert("Bad memory id: " + memoryId);
+  return;
+}
+
 
   playSound("tap");
 
