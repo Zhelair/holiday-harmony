@@ -1,6 +1,6 @@
 // ==========================
 // Holiday Harmony — app.js
-// EN/RU toggle + Vibe pulse animation
+// Adds: Memory of the Day + Pause (shared) + Recap modal + Tags
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -14,30 +14,32 @@ if (!window.supabase || !window.supabase.createClient) {
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ PASTE REAL VALUES (KEEP QUOTES!)
+// ✅ PASTE REAL VALUES
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
-// ---- URL params
+// ---- room
 const params = new URLSearchParams(location.search);
 const room = (params.get("room") || "").trim();
 if (!room) {
   alert("No room code found. Go back and enter a room code.");
   location.href = "index.html";
 }
-
-// ---- DOM
 document.getElementById("roomLabel").textContent = room;
+
+// ---- share link
 const shareLink = document.getElementById("shareLink");
 const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
 shareLink.textContent = `Share: ${base}room.html?room=${encodeURIComponent(room)}`;
 
+// ---- DOM
 const nameEl = document.getElementById("name");
 const momentEl = document.getElementById("moment");
 const statusEl = document.getElementById("status");
 const listEl = document.getElementById("list");
+const tagSelect = document.getElementById("tagSelect");
 
 const moodStatusEl = document.getElementById("moodStatus");
 const moodBoardEl = document.getElementById("moodBoard");
@@ -49,7 +51,9 @@ const kpiReactsEl = document.getElementById("kpiReacts");
 
 const defuseBtn = document.getElementById("defuseBtn");
 const choreBtn = document.getElementById("choreBtn");
+const pauseBtn = document.getElementById("pauseBtn");
 const defuseOut = document.getElementById("defuseOut");
+const activityOut = document.getElementById("activityOut");
 
 const awardsOut = document.getElementById("awardsOut");
 const tipsOut = document.getElementById("tipsOut");
@@ -68,13 +72,23 @@ const vibeBarEl = document.getElementById("vibeBar");
 
 const langBtn = document.getElementById("langBtn");
 
+const motdOut = document.getElementById("motdOut");
+
+const pauseBanner = document.getElementById("pauseBanner");
+
+const recapBtn = document.getElementById("recapBtn");
+const modalBack = document.getElementById("modalBack");
+const closeRecapBtn = document.getElementById("closeRecapBtn");
+const recapModalKpis = document.getElementById("recapModalKpis");
+const recapModalMotd = document.getElementById("recapModalMotd");
+const recapModalAwards = document.getElementById("recapModalAwards");
+
 // ---- helpers
 function escapeHtml(str) {
   return (str || "").replace(/[&<>"']/g, s => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
   }[s]));
 }
-
 function todayISODate() {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -82,11 +96,17 @@ function todayISODate() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+function isSameLocalDay(isoOrTs) {
+  const d = new Date(isoOrTs);
+  return d.toDateString() === new Date().toDateString();
+}
+function fmtLocal(ts) {
+  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+}
 
 function soundOn() {
   return soundToggle ? !!soundToggle.checked : true;
 }
-
 function tryPlayAudio(src, opts = {}) {
   if (!soundOn()) return null;
   try {
@@ -98,7 +118,6 @@ function tryPlayAudio(src, opts = {}) {
     return a;
   } catch { return null; }
 }
-
 function playSound(which) {
   if (!soundOn()) return;
   const map = {
@@ -131,7 +150,6 @@ soundToggle?.addEventListener("change", () => {
 // ---- remember name
 function getSavedName() { return localStorage.getItem("hh_name") || ""; }
 function setSavedName(v) { if (v) localStorage.setItem("hh_name", v); }
-
 (function initIdentity(){
   const n = getSavedName();
   if (n && nameEl) nameEl.value = n;
@@ -153,243 +171,161 @@ function ensureDeviceId() {
 const DEVICE_ID = ensureDeviceId();
 
 // ==========================
-// Language (EN / RU)
+// Language (EN/RU)
 // ==========================
 const i18n = {
   en: {
-    roomTitle: "🏠 Room:",
-    appTitle: "Holiday Harmony",
-    appSubtitle: "Co-op family mini-game: collect good moments, keep the vibe warm.",
+    soundLabel:"🔊 Sound",
+    motdTitle:"⭐ Memory of the Day",
+    motdHint:"Most loved memory today (by reactions).",
+    recapBtn:"📸 Recap",
+    recapTitle:"📸 Today’s Recap",
+    recapHowto:"How to share:",
+    recapHowtoText:"Take a screenshot and send it to the family chat 🙂",
+    recapFooterHint:"Tip: open this screen on a phone for the best screenshot.",
 
-    soundLabel: "🔊 Sound",
-    party: "🎉 Party",
+    pauseBtn:"🧘 I need a pause",
+    pauseBannerTitle:"🧘 Pause time",
+    pauseBannerText:"10 minutes. Tea/water. No heavy topics. We’re on the same team.",
+    pauseRemaining:"Remaining",
 
-    missionTitle: "🎯 Today’s Gentle Challenge",
-    missionDone: "✅ I did it",
-    missionNew: "🎲 New (just for me)",
-    missionHint: "Shared daily challenge + personal reroll option.",
+    tagFood:"🍽 Food",
+    tagFunny:"😂 Funny",
+    tagMovie:"🎬 Movie",
+    tagTea:"☕ Tea",
+    tagGifts:"🎁 Gifts",
+    tagKids:"🧸 Kids",
+    tagNone:"(no tag)",
+    post:"Post memory",
 
-    dashTitle: "📊 Family Dashboard",
-    kpiMemoriesLabel: "Happy moments today",
-    kpiCheckinsLabel: "Mood check-ins today",
-    kpiMoodLabel: "Today’s vibe",
-    kpiReactsLabel: "Reactions today",
+    pleaseName:"Please enter your name first 🙂",
+    saving:"Saving…",
+    checkedIn:"Checked in ✅",
+    posted:"Posted ✅",
+    fillNameMoment:"Please fill your name + the moment.",
 
-    checkinTitle: "✅ Daily Mood Check-in",
-    namePh: "Your name",
-    checkinHint: "Pick your mood for today (you can change it later).",
-    calm: "Calm",
-    okay: "Okay",
-    overloaded: "Overloaded",
-    resetMoment: "🧯 Reset Moment",
-    choreRoulette: "🎡 Chore Roulette",
+    vibeNoCheckins:"No check-ins yet",
+    vibeCalm:"😇 Calm",
+    vibeOkay:"😐 Okay",
+    vibeOver:"😤 Overloaded",
 
-    awardsTitle: "🏆 Awards Preview",
-    awardsHint: "Friendly awards only. No roasting. 😄",
+    cozyStart:"🙂 Cozy start",
+    goodVibes:"🙂 Good vibes",
+    greatDay:"😄 Great day together",
+    gentleReset:"🧯 Gentle reset",
 
-    activityTitle: "🎲 Activity Generator",
-    activityBtn: "Give us something fun",
-    activityHint: "Instant “what do we do now?” rescue button.",
+    cozyNote:"Post one happy moment (even a tiny one).",
+    goodNote:"Nice. The warm timeline is growing.",
+    greatNote:"Food, laughs, and a little rest. Perfect.",
+    resetNote:"Tea/walk mode can save the evening.",
 
-    boardTitle: "🧾 Today’s Mood Board",
-    boardHint: "Shows who checked in today.",
+    recapTitleInline:"Today recap:",
+    recapMem:"Memories",
+    recapReact:"Reactions",
+    recapCheck:"Check-ins",
+    recapFooter:"Vibe meter is… surprisingly accurate 😄",
 
-    vaultTitle: "✨ Memory Vault",
-    momentPh: "Happy moment (e.g. We laughed together at breakfast)",
-    post: "Post memory",
-    reactionsLabel: "Reactions:",
-    reactionsHint: "Tap ❤️ 😂 ⭐ on any memory (tap again to undo).",
+    moodBoardEmpty:"No one checked in yet. Want to start? 🙂",
+    awardsNone:"No awards yet.",
+    motdEmpty:"No memories yet today. Add the first warm moment ✨",
 
-    tipsTitle: "📌 Quick Tips",
-    tipBtn: "Give me a tip",
-    tipsHint: "Short prompts to keep the vibe warm.",
-
-    pleaseName: "Please enter your name first 🙂",
-    saving: "Saving…",
-    checkedIn: "Checked in ✅",
-    posted: "Posted ✅",
-    fillNameMoment: "Please fill your name + the moment.",
-
-    vibeNoCheckins: "No check-ins yet",
-    vibeCalm: "😇 Calm",
-    vibeOkay: "😐 Okay",
-    vibeOver: "😤 Overloaded",
-
-    cozyStart: "🙂 Cozy start",
-    goodVibes: "🙂 Good vibes",
-    greatDay: "😄 Great day together",
-    gentleReset: "🧯 Gentle reset",
-
-    cozyNote: "Post one happy moment (even a tiny one).",
-    goodNote: "Nice. The warm timeline is growing.",
-    greatNote: "Food, laughs, and a little rest. Perfect.",
-    resetNote: "Tea/walk mode can save the evening.",
-
-    recapTitle: "Today recap:",
-    recapMem: "Memories",
-    recapReact: "Reactions",
-    recapCheck: "Check-ins",
-    recapFooter: "Vibe meter is… surprisingly accurate 😄",
-
-    moodBoardEmpty: "No one checked in yet. Want to start? 🙂",
-    awardsNone: "No awards yet.",
-
-    reactSelectErr: "REACTION SELECT ERROR:\n",
-    reactInsertErr: "REACTION INSERT ERROR:\n",
-    reactDeleteErr: "REACTION DELETE ERROR:\n",
-    badMemoryId: "Bad memory id (not a number): "
+    badMemoryId:"Bad memory id (not a number): ",
+    reactSelectErr:"REACTION SELECT ERROR:\n",
+    reactInsertErr:"REACTION INSERT ERROR:\n",
+    reactDeleteErr:"REACTION DELETE ERROR:\n",
   },
-
   ru: {
-    roomTitle: "🏠 Комната:",
-    appTitle: "Holiday Harmony",
-    appSubtitle: "Семейная мини-игра: собираем тёплые моменты и держим атмосферу.",
+    soundLabel:"🔊 Звук",
+    motdTitle:"⭐ Момент дня",
+    motdHint:"Самый любимый момент сегодня (по реакциям).",
+    recapBtn:"📸 Итог",
+    recapTitle:"📸 Итог дня",
+    recapHowto:"Как поделиться:",
+    recapHowtoText:"Сделайте скриншот и отправьте в семейный чат 🙂",
+    recapFooterHint:"Подсказка: на телефоне скрин получается лучше.",
 
-    soundLabel: "🔊 Звук",
-    party: "🎉 Пати",
+    pauseBtn:"🧘 Нужна пауза",
+    pauseBannerTitle:"🧘 Пауза",
+    pauseBannerText:"10 минут. Чай/вода. Без тяжёлых тем. Мы одна команда.",
+    pauseRemaining:"Осталось",
 
-    missionTitle: "🎯 Мягкий вызов на сегодня",
-    missionDone: "✅ Сделано",
-    missionNew: "🎲 Новый (только мне)",
-    missionHint: "Общий вызов дня + личный «переброс».",
+    tagFood:"🍽 Еда",
+    tagFunny:"😂 Смешно",
+    tagMovie:"🎬 Фильм",
+    tagTea:"☕ Чай",
+    tagGifts:"🎁 Подарки",
+    tagKids:"🧸 Дети",
+    tagNone:"(без тега)",
+    post:"Добавить момент",
 
-    dashTitle: "📊 Семейная панель",
-    kpiMemoriesLabel: "Тёплых моментов сегодня",
-    kpiCheckinsLabel: "Чек-ины настроения сегодня",
-    kpiMoodLabel: "Вайб дня",
-    kpiReactsLabel: "Реакций сегодня",
+    pleaseName:"Сначала введите имя 🙂",
+    saving:"Сохраняю…",
+    checkedIn:"Отмечено ✅",
+    posted:"Добавлено ✅",
+    fillNameMoment:"Введите имя и текст момента.",
 
-    checkinTitle: "✅ Чек-ин настроения",
-    namePh: "Ваше имя",
-    checkinHint: "Выберите настроение (можно менять позже).",
-    calm: "Спокойно",
-    okay: "Норм",
-    overloaded: "Перегруз",
-    resetMoment: "🧯 Пауза-перезагрузка",
-    choreRoulette: "🎡 Рулетка дел",
+    vibeNoCheckins:"Пока нет чек-инов",
+    vibeCalm:"😇 Спокойно",
+    vibeOkay:"😐 Норм",
+    vibeOver:"😤 Перегруз",
 
-    awardsTitle: "🏆 Награды",
-    awardsHint: "Только добрые награды. Без подколов 😄",
+    cozyStart:"🙂 Разогреваемся",
+    goodVibes:"🙂 Хороший вайб",
+    greatDay:"😄 Прям тепло пошло",
+    gentleReset:"🧯 Нужна мягкая пауза",
 
-    activityTitle: "🎲 Генератор активности",
-    activityBtn: "Дай идею",
-    activityHint: "Кнопка спасения: «что делаем?»",
+    cozyNote:"Добавьте один тёплый момент (даже маленький).",
+    goodNote:"Класс. Лента тепла растёт.",
+    greatNote:"Еда, смех и чуть отдыха — идеально.",
+    resetNote:"Чай/прогулка часто спасают вечер.",
 
-    boardTitle: "🧾 Доска настроения",
-    boardHint: "Кто как отметился сегодня.",
+    recapTitleInline:"Итог дня:",
+    recapMem:"Моменты",
+    recapReact:"Реакции",
+    recapCheck:"Чек-ины",
+    recapFooter:"Шкала вайба… подозрительно точная 😄",
 
-    vaultTitle: "✨ Копилка моментов",
-    momentPh: "Тёплый момент (например: посмеялись за завтраком)",
-    post: "Добавить момент",
-    reactionsLabel: "Реакции:",
-    reactionsHint: "Нажмите ❤️ 😂 ⭐ на любом моменте (повторно — убрать).",
+    moodBoardEmpty:"Пока никто не отметился. Начнём? 🙂",
+    awardsNone:"Пока нет наград.",
+    motdEmpty:"Сегодня ещё нет моментов. Добавьте первый тёплый момент ✨",
 
-    tipsTitle: "📌 Быстрые подсказки",
-    tipBtn: "Дай подсказку",
-    tipsHint: "Короткие идеи, чтобы сохранить тепло.",
-
-    pleaseName: "Сначала введите имя 🙂",
-    saving: "Сохраняю…",
-    checkedIn: "Отмечено ✅",
-    posted: "Добавлено ✅",
-    fillNameMoment: "Введите имя и текст момента.",
-
-    vibeNoCheckins: "Пока нет чек-инов",
-    vibeCalm: "😇 Спокойно",
-    vibeOkay: "😐 Норм",
-    vibeOver: "😤 Перегруз",
-
-    cozyStart: "🙂 Разогреваемся",
-    goodVibes: "🙂 Хороший вайб",
-    greatDay: "😄 Прям тепло пошло",
-    gentleReset: "🧯 Нужна мягкая пауза",
-
-    cozyNote: "Добавьте один тёплый момент (даже маленький).",
-    goodNote: "Класс. Лента тепла растёт.",
-    greatNote: "Еда, смех и чуть отдыха — идеально.",
-    resetNote: "Чай/прогулка часто спасают вечер.",
-
-    recapTitle: "Итог дня:",
-    recapMem: "Моменты",
-    recapReact: "Реакции",
-    recapCheck: "Чек-ины",
-    recapFooter: "Шкала вайба… подозрительно точная 😄",
-
-    moodBoardEmpty: "Пока никто не отметился. Начнём? 🙂",
-    awardsNone: "Пока нет наград.",
-
-    reactSelectErr: "ОШИБКА SELECT реакций:\n",
-    reactInsertErr: "ОШИБКА INSERT реакций:\n",
-    reactDeleteErr: "ОШИБКА DELETE реакций:\n",
-    badMemoryId: "Плохой id момента (не число): "
+    badMemoryId:"Плохой id (не число): ",
+    reactSelectErr:"ОШИБКА SELECT реакций:\n",
+    reactInsertErr:"ОШИБКА INSERT реакций:\n",
+    reactDeleteErr:"ОШИБКА DELETE реакций:\n",
   }
 };
 
-function getLang() { return localStorage.getItem("hh_lang") || "en"; }
-function setLang(v) { localStorage.setItem("hh_lang", v); }
+function getLang(){ return localStorage.getItem("hh_lang") || "en"; }
+function setLang(v){ localStorage.setItem("hh_lang", v); }
 let LANG = getLang();
+function t(key){ return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key; }
 
-function t(key) {
-  return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key;
-}
-
-function applyLanguage() {
-  // Static text
-  document.getElementById("roomTitle").childNodes[0].textContent = t("roomTitle") + " ";
-  document.getElementById("appTitle").textContent = t("appTitle");
-  document.getElementById("appSubtitle").textContent = t("appSubtitle");
-
+function applyLanguage(){
   document.getElementById("soundLabel").textContent = t("soundLabel");
-  partyBtn.textContent = t("party");
+  document.getElementById("motdTitle").textContent = t("motdTitle");
+  document.getElementById("motdHint").textContent = t("motdHint");
+  recapBtn.textContent = t("recapBtn");
+  document.getElementById("recapTitle").textContent = t("recapTitle");
+  document.getElementById("recapHowto").textContent = t("recapHowto");
+  document.getElementById("recapHowtoText").textContent = t("recapHowtoText");
+  document.getElementById("recapFooterHint").textContent = t("recapFooterHint");
 
-  document.getElementById("missionTitle").textContent = t("missionTitle");
-  missionDoneBtn.textContent = t("missionDone");
-  missionNewBtn.textContent = t("missionNew");
-  document.getElementById("missionHint").textContent = t("missionHint");
-
-  document.getElementById("dashTitle").textContent = t("dashTitle");
-  document.getElementById("kpiMemoriesLabel").textContent = t("kpiMemoriesLabel");
-  document.getElementById("kpiCheckinsLabel").textContent = t("kpiCheckinsLabel");
-  document.getElementById("kpiMoodLabel").textContent = t("kpiMoodLabel");
-  document.getElementById("kpiReactsLabel").textContent = t("kpiReactsLabel");
-
-  document.getElementById("checkinTitle").textContent = t("checkinTitle");
-  nameEl.placeholder = t("namePh");
-  document.getElementById("checkinHint").textContent = t("checkinHint");
-
-  document.getElementById("moodGoodLabel").textContent = t("calm");
-  document.getElementById("moodOkLabel").textContent = t("okay");
-  document.getElementById("moodBadLabel").textContent = t("overloaded");
-
-  defuseBtn.textContent = t("resetMoment");
-  choreBtn.textContent = t("choreRoulette");
-
-  document.getElementById("awardsTitle").textContent = t("awardsTitle");
-  document.getElementById("awardsHint").textContent = t("awardsHint");
-
-  document.getElementById("activityTitle").textContent = t("activityTitle");
-  document.getElementById("activityBtn").textContent = t("activityBtn");
-  document.getElementById("activityHint").textContent = t("activityHint");
-
-  document.getElementById("boardTitle").textContent = t("boardTitle");
-  document.getElementById("boardHint").textContent = t("boardHint");
-
-  document.getElementById("vaultTitle").textContent = t("vaultTitle");
-  momentEl.placeholder = t("momentPh");
+  pauseBtn.textContent = t("pauseBtn");
   document.getElementById("postBtn").textContent = t("post");
-  document.getElementById("reactionsLabel").textContent = t("reactionsLabel");
-  document.getElementById("reactionsHint").textContent = t("reactionsHint");
 
-  document.getElementById("tipsTitle").textContent = t("tipsTitle");
-  newTipBtn.textContent = t("tipBtn");
-  document.getElementById("tipsHint").textContent = t("tipsHint");
+  // tags
+  tagSelect.options[0].textContent = t("tagNone");
+  tagSelect.options[1].textContent = t("tagFood");
+  tagSelect.options[2].textContent = t("tagFunny");
+  tagSelect.options[3].textContent = t("tagMovie");
+  tagSelect.options[4].textContent = t("tagTea");
+  tagSelect.options[5].textContent = t("tagGifts");
+  tagSelect.options[6].textContent = t("tagKids");
 
-  // Re-render dynamic sections in new language
   renderMission();
-  // tips will refresh on next loadAll; we also refresh immediately
   loadAll();
 }
-
 langBtn?.addEventListener("click", () => {
   playSound("tap");
   LANG = (LANG === "en") ? "ru" : "en";
@@ -398,7 +334,7 @@ langBtn?.addEventListener("click", () => {
 });
 
 // ==========================
-// Content pools (EN & RU)
+// Pools
 // ==========================
 function pools() {
   if (LANG === "ru") {
@@ -497,26 +433,23 @@ function pools() {
 }
 
 // ==========================
-// Today’s Mission (no DB)
+// Mission (local)
 // ==========================
 function hashStringToInt(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
   return h;
 }
-
 function missionKeyBase() { return `hh_mission_${room}_${todayISODate()}`; }
 function myMissionOverrideKey() { return `${missionKeyBase()}_override_${DEVICE_ID}`; }
 function missionDoneKey() {
   const name = ((nameEl?.value || getSavedName()) || "anon").trim().toLowerCase();
   return `${missionKeyBase()}_done_${name}_${DEVICE_ID}`;
 }
-
-function getTodaysMissionIndex(missionList) {
+function getTodaysMissionIndex(list) {
   const baseSeed = `${room}|${todayISODate()}`;
-  return hashStringToInt(baseSeed) % missionList.length;
+  return hashStringToInt(baseSeed) % list.length;
 }
-
 function renderMission() {
   const { missions } = pools();
   const override = localStorage.getItem(myMissionOverrideKey());
@@ -525,7 +458,6 @@ function renderMission() {
   const done = localStorage.getItem(missionDoneKey()) === "1";
   missionOut.innerHTML = `<b>${escapeHtml(mission)}</b><br><small>${done ? "✅" : ""}</small>`;
 }
-
 missionDoneBtn?.addEventListener("click", () => {
   playSound("tap");
   const name = (nameEl.value || "").trim();
@@ -534,7 +466,6 @@ missionDoneBtn?.addEventListener("click", () => {
   renderMission();
   playSound("success");
 });
-
 missionNewBtn?.addEventListener("click", () => {
   playSound("tap");
   const { missions } = pools();
@@ -542,37 +473,57 @@ missionNewBtn?.addEventListener("click", () => {
   renderMission();
   playSound("success");
 });
-
 renderMission();
 
 // ==========================
-// Buttons: Activity / Reset / Chores
+// Activity / Reset / Chores
 // ==========================
 document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
   const { activities } = pools();
   const pick = activities[Math.floor(Math.random() * activities.length)];
-  document.getElementById("activityOut").innerHTML = `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
+  activityOut.innerHTML = `<div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;"><b>${escapeHtml(pick)}</b></div>`;
 });
-
 defuseBtn?.addEventListener("click", () => {
   playSound("tap");
   const { defuse } = pools();
   const pick = defuse[Math.floor(Math.random() * defuse.length)];
-  defuseOut.innerHTML = `
-    <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      <b>${escapeHtml(pick)}</b>
-    </div>`;
+  defuseOut.innerHTML = `<div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;"><b>${escapeHtml(pick)}</b></div>`;
 });
-
 choreBtn?.addEventListener("click", () => {
   playSound("tap");
   const { chores } = pools();
   const pick = chores[Math.floor(Math.random() * chores.length)];
-  defuseOut.innerHTML = `
-    <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      <b>${escapeHtml(pick)}</b>
-    </div>`;
+  defuseOut.innerHTML = `<div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;"><b>${escapeHtml(pick)}</b></div>`;
+});
+
+// ==========================
+// Pause (shared via Supabase signals)
+// ==========================
+function msToMmSs(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor(s / 60)).padStart(2,"0");
+  const ss = String(s % 60).padStart(2,"0");
+  return `${mm}:${ss}`;
+}
+
+async function sendPause() {
+  playSound("tap");
+  const { error } = await supa.from("signals").insert([{
+    room_code: room,
+    type: "pause",
+    payload: "10m"
+  }]);
+  if (error) {
+    alert("Pause error: " + error.message);
+    return;
+  }
+  playSound("success");
+  await loadAll();
+}
+
+pauseBtn?.addEventListener("click", () => {
+  sendPause();
 });
 
 // ==========================
@@ -583,11 +534,9 @@ const moodButtons = {
   ok: document.getElementById("moodOk"),
   bad: document.getElementById("moodBad"),
 };
-
 function clearMoodSelection() {
   Object.values(moodButtons).forEach(btn => btn?.classList.remove("moodSelected"));
 }
-
 async function setMood(mood) {
   const name = (nameEl.value || "").trim();
   if (!name) { moodStatusEl.textContent = t("pleaseName"); return; }
@@ -596,7 +545,6 @@ async function setMood(mood) {
   playSound("tap");
 
   const checkin_date = todayISODate();
-
   const { error } = await supa
     .from("checkins")
     .upsert([{ room_code: room, name, checkin_date, mood }],
@@ -613,7 +561,6 @@ async function setMood(mood) {
   playSound("success");
   await loadAll();
 }
-
 moodButtons.good?.addEventListener("click", () => setMood("good"));
 moodButtons.ok?.addEventListener("click", () => setMood("ok"));
 moodButtons.bad?.addEventListener("click", () => setMood("bad"));
@@ -636,12 +583,10 @@ function loadMyMoodSelection(checkinsToday) {
 async function toggleReaction(memoryIdRaw, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
   const memIdNum = Number(memoryIdRaw);
-
   if (!Number.isFinite(memIdNum)) {
     alert(t("badMemoryId") + memoryIdRaw);
     return;
   }
-
   playSound("tap");
 
   const { data: existing, error: selErr } = await supa
@@ -653,49 +598,29 @@ async function toggleReaction(memoryIdRaw, emoji) {
     .eq("device_id", DEVICE_ID)
     .limit(1);
 
-  if (selErr) {
-    alert(t("reactSelectErr") + selErr.message);
-    debug("❌ Reaction SELECT error: " + selErr.message);
-    return;
-  }
+  if (selErr) { alert(t("reactSelectErr") + selErr.message); return; }
 
   if (existing && existing.length) {
-    const { error: delErr } = await supa
-      .from("reactions")
-      .delete()
-      .eq("id", existing[0].id);
-
-    if (delErr) {
-      alert(t("reactDeleteErr") + delErr.message);
-      debug("❌ Reaction DELETE error: " + delErr.message);
-      return;
-    }
+    const { error: delErr } = await supa.from("reactions").delete().eq("id", existing[0].id);
+    if (delErr) { alert(t("reactDeleteErr") + delErr.message); return; }
   } else {
-    const { error: insErr } = await supa
-      .from("reactions")
-      .insert([{ room_code: room, memory_id: memIdNum, emoji, name, device_id: DEVICE_ID }]);
-
-    if (insErr) {
-      alert(t("reactInsertErr") + insErr.message);
-      debug("❌ Reaction INSERT error: " + insErr.message);
-      return;
-    }
+    const { error: insErr } = await supa.from("reactions").insert([{
+      room_code: room, memory_id: memIdNum, emoji, name, device_id: DEVICE_ID
+    }]);
+    if (insErr) { alert(t("reactInsertErr") + insErr.message); return; }
   }
 
   playSound("success");
   await loadAll();
 }
-
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest(".reactBtn");
   if (!btn) return;
-  const mid = btn.getAttribute("data-mid");
-  const emo = btn.getAttribute("data-emo");
-  await toggleReaction(mid, emo);
+  await toggleReaction(btn.getAttribute("data-mid"), btn.getAttribute("data-emo"));
 });
 
 // ==========================
-// Tips (language-aware)
+// Tips
 // ==========================
 function pickRandom(arr, count = 3) {
   const copy = [...arr];
@@ -703,40 +628,41 @@ function pickRandom(arr, count = 3) {
   while (copy.length && out.length < count) out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
   return out;
 }
-
+function summarizeMood(checkinsToday) {
+  const counts = { good: 0, ok: 0, bad: 0 };
+  for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
+  let vibe = t("vibeNoCheckins");
+  if (checkinsToday.length > 0) {
+    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
+    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
+    else vibe = t("vibeOkay");
+  }
+  return { counts, vibe };
+}
 function buildTipsPool(memoriesTodayCount, checkinsToday) {
   const { counts } = summarizeMood(checkinsToday);
   const tips = [];
-
   if (LANG === "ru") {
     if (checkinsToday.length === 0) tips.push("✅ Попросите всех отметиться — один тап улучшает атмосферу.");
     if (memoriesTodayCount === 0) tips.push("✨ Добавьте один тёплый момент. «Хороший чай» тоже считается.");
     if (counts.bad >= 2) tips.push("🧯 Если перегруз: чай/прогулка часто спасают вечер.");
-
     tips.push("🫶 Круг комплиментов: по одному искреннему предложению.");
     tips.push("🎬 Выбор фильма: каждый предлагает по одному — потом голосование.");
-    tips.push("🧹 5 минут уборки под музыку = быстрый ресет.");
     tips.push("🍵 Правило чая: без «разборов» во время чая.");
-    tips.push("🎲 Когда разговор вязнет — жмите «Генератор активности».");
     tips.push("😂 «А помнишь…» — лучший семейный клей.");
     tips.push("⭐ Ставьте реакции — вайб растёт быстрее.");
     return tips;
   }
-
   if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
   if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
   if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
-
   tips.push("🫶 Compliment round: one sincere sentence each.");
   tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
-  tips.push("🧹 5-minute tidy sprint with music = fast reset.");
   tips.push("🍵 Tea break rule: no problem-solving during tea.");
-  tips.push("🎲 Use Activity Generator when conversation gets stuck.");
   tips.push("😂 ‘Remember when…’ story time is the best glue.");
   tips.push("⭐ React to memories — it boosts the vibe fast.");
   return tips;
 }
-
 let lastTipsPool = [];
 newTipBtn?.addEventListener("click", () => {
   playSound("tap");
@@ -745,21 +671,24 @@ newTipBtn?.addEventListener("click", () => {
 });
 
 // ==========================
-// Post memory
+// Post memory (with TAG prefix)
 // ==========================
 async function postMemory() {
   statusEl.textContent = "";
   const name = (nameEl.value || "").trim();
-  const moment = (momentEl.value || "").trim();
+  let moment = (momentEl.value || "").trim();
+  const tag = (tagSelect.value || "").trim();
 
   if (!name || !moment) {
     statusEl.textContent = t("fillNameMoment");
     return;
   }
 
-  playSound("tap");
+  if (tag) moment = `${tag} ${moment}`;
 
+  playSound("tap");
   const { error } = await supa.from("memories").insert([{ room_code: room, name, moment }]);
+
   if (error) {
     statusEl.textContent = "Error: " + error.message;
     return;
@@ -773,36 +702,20 @@ async function postMemory() {
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
 
 // ==========================
-// Dashboard + vibe bar (with pulse animation)
+// Vibe bar + pulse
 // ==========================
-function summarizeMood(checkinsToday) {
-  const counts = { good: 0, ok: 0, bad: 0 };
-  for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
-  let vibe = t("vibeNoCheckins");
-  if (checkinsToday.length > 0) {
-    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
-    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
-    else vibe = t("vibeOkay");
-  }
-  return { counts, vibe };
-}
-
 let lastVibePercent = null;
-
 function pulseVibe() {
   if (!vibeWrapEl) return;
   vibeWrapEl.classList.remove("vibePulse");
-  // force reflow so animation can retrigger
   void vibeWrapEl.offsetWidth;
   vibeWrapEl.classList.add("vibePulse");
 }
-
 function setVibeBar(percent, vibeText) {
   if (!vibeBarEl) return;
   const p = Math.max(0, Math.min(100, percent));
   vibeBarEl.style.width = p + "%";
 
-  // Color set based on vibe
   if (String(vibeText).includes("Перегруз") || String(vibeText).includes("Overloaded")) {
     vibeBarEl.style.background = "linear-gradient(90deg, #ffb3b3, #ffd1d1)";
   } else if (String(vibeText).includes("Спокой") || String(vibeText).includes("Calm")) {
@@ -812,11 +725,54 @@ function setVibeBar(percent, vibeText) {
   }
   vibeBarEl.style.backgroundSize = "200% 100%";
 
-  // Pulse only if changed noticeably (prevents constant pulsing)
   if (lastVibePercent === null || Math.abs(p - lastVibePercent) >= 3) {
     pulseVibe();
     lastVibePercent = p;
   }
+}
+
+function updateMoodBoard(checkinsToday) {
+  if (!moodBoardEl) return;
+  if (checkinsToday.length === 0) {
+    moodBoardEl.innerHTML = `<small>${escapeHtml(t("moodBoardEmpty"))}</small>`;
+    return;
+  }
+  const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
+  moodBoardEl.innerHTML = `
+    <b style="display:block; margin-bottom:8px;">🧾 ${escapeHtml(LANG==="ru" ? "Доска настроения" : "Today’s Mood Board")}</b>
+    ${checkinsToday
+      .sort((a,b) => a.name.localeCompare(b.name))
+      .map(c => `
+        <div style="padding:10px 12px; border:1px solid #e7e7ef; border-radius:14px; margin:8px 0; background:#fff;">
+          <b>${escapeHtml(c.name)}</b> — ${moodEmoji(c.mood)}
+        </div>
+      `).join("")}
+  `;
+}
+
+function updateAwards(memories, checkinsToday, reactionsByMemory) {
+  if (!awardsOut) return;
+
+  const byName = {};
+  for (const m of memories) byName[m.name] = (byName[m.name] || 0) + 1;
+  const top = Object.entries(byName).sort((a,b)=>b[1]-a[1])[0];
+
+  let topMemory = null;
+  for (const m of memories) {
+    const cnt = reactionsByMemory[String(m.id)]?.total || 0;
+    if (!topMemory || cnt > topMemory.cnt) topMemory = { cnt, name: m.name };
+  }
+
+  const awards = [];
+  const awardName = (en, ru) => LANG === "ru" ? ru : en;
+
+  if (top) awards.push(`✨ <b>${awardName("Memory Maker", "Хранитель моментов")}</b>: ${escapeHtml(top[0])} (${top[1]})`);
+  if (topMemory && topMemory.cnt > 0) awards.push(`⭐ <b>${awardName("Most Loved Moment", "Самый любимый момент")}</b>: ${escapeHtml(topMemory.name)} (${topMemory.cnt})`);
+
+  awardsOut.innerHTML = `
+    <div style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
+      ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : `<small>${escapeHtml(t("awardsNone"))}</small>`}
+    </div>`;
 }
 
 function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount) {
@@ -843,90 +799,112 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
   setVibeBar(score, vibe);
 
   recapOut.innerHTML = `
-    <b>${escapeHtml(t("recapTitle"))}</b><br>
+    <b>${escapeHtml(t("recapTitleInline"))}</b><br>
     • ${escapeHtml(t("recapMem"))}: <b>${memoriesTodayCount}</b> • ${escapeHtml(t("recapReact"))}: <b>${reactionsTodayCount}</b><br>
     • ${escapeHtml(t("recapCheck"))}: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
     <small>${escapeHtml(t("recapFooter"))}</small>
   `;
 }
 
-function updateMoodBoard(checkinsToday) {
-  if (!moodBoardEl) return;
-  if (checkinsToday.length === 0) {
-    moodBoardEl.innerHTML = `<small>${escapeHtml(t("moodBoardEmpty"))}</small>`;
+// ==========================
+// Memory of the Day (most reactions today)
+// ==========================
+function renderMOTD(memories, reactionsByMemory) {
+  const todays = memories.filter(m => isSameLocalDay(m.created_at));
+  if (!todays.length) {
+    motdOut.innerHTML = `<small>${escapeHtml(t("motdEmpty"))}</small>`;
+    return { motd: null };
+  }
+
+  let best = null;
+  for (const m of todays) {
+    const rx = reactionsByMemory[String(m.id)]?.total || 0;
+    if (!best || rx > best.rx || (rx === best.rx && new Date(m.created_at) > new Date(best.created_at))) {
+      best = { ...m, rx };
+    }
+  }
+
+  motdOut.innerHTML = `
+    <div style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
+      <b>${escapeHtml(best.name)}</b>
+      <small> — ${escapeHtml(fmtLocal(best.created_at))}</small>
+      <div style="margin-top:6px;">${escapeHtml(best.moment)}</div>
+      <div style="margin-top:10px;"><b>⭐</b> ${best.rx} ${LANG==="ru" ? "реакций" : "reactions"}</div>
+    </div>
+  `;
+  return { motd: best };
+}
+
+// ==========================
+// Pause banner rendering
+// ==========================
+function renderPauseBanner(latestPauseSignal) {
+  if (!latestPauseSignal) {
+    pauseBanner.style.display = "none";
     return;
   }
 
-  const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
-  const moodLabel = (m) => {
-    if (LANG === "ru") return m === "good" ? "спокойно" : m === "ok" ? "норм" : "перегруз";
-    return m === "good" ? "calm" : m === "ok" ? "ok" : "overloaded";
-  };
+  const created = new Date(latestPauseSignal.created_at).getTime();
+  const now = Date.now();
+  const durationMs = 10 * 60 * 1000;
+  const end = created + durationMs;
 
-  moodBoardEl.innerHTML = checkinsToday
-    .sort((a,b) => a.name.localeCompare(b.name))
-    .map(c => `
-      <div style="padding:10px 12px; border:1px solid #e7e7ef; border-radius:14px; margin:8px 0; background:#fff;">
-        <b>${escapeHtml(c.name)}</b> — ${moodEmoji(c.mood)} <small>(${escapeHtml(moodLabel(c.mood))})</small>
-      </div>
-    `).join("");
-}
-
-function updateAwards(memories, checkinsToday, reactionsByMemory) {
-  if (!awardsOut) return;
-
-  const byName = {};
-  for (const m of memories) byName[m.name] = (byName[m.name] || 0) + 1;
-  const top = Object.entries(byName).sort((a,b)=>b[1]-a[1])[0];
-  const mostMemories = top ? { name: top[0], val: top[1] } : null;
-
-  let topMemory = null;
-  for (const m of memories) {
-    const cnt = reactionsByMemory[String(m.id)]?.total || 0;
-    if (!topMemory || cnt > topMemory.cnt) topMemory = { cnt, name: m.name };
+  if (now >= end) {
+    pauseBanner.style.display = "none";
+    return;
   }
 
-  const moodNames = { good: [], ok: [], bad: [] };
-  for (const c of checkinsToday) moodNames[c.mood]?.push(c.name);
+  const remaining = end - now;
 
-  const awards = [];
-  const awardName = (en, ru) => LANG === "ru" ? ru : en;
-
-  if (mostMemories) awards.push(`✨ <b>${awardName("Memory Maker", "Главный хранитель моментов")}</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val})`);
-  if (moodNames.good?.[0]) awards.push(`🕊 <b>${awardName("Calm Star", "Спокойная звезда")}</b>: ${escapeHtml(moodNames.good[0])}`);
-  if (moodNames.ok?.[0]) awards.push(`🙂 <b>${awardName("Steady Support", "Опора дня")}</b>: ${escapeHtml(moodNames.ok[0])}`);
-  if (moodNames.bad?.[0]) awards.push(`🫶 <b>${awardName("Needs a Hug", "Нужна обнимашка")}</b>: ${escapeHtml(moodNames.bad[0])}`);
-  if (topMemory && topMemory.cnt > 0) awards.push(`⭐ <b>${awardName("Most Loved Moment", "Самый любимый момент")}</b>: ${escapeHtml(topMemory.name)} (${topMemory.cnt})`);
-
-  awardsOut.innerHTML = `
-    <div style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : `<small>${escapeHtml(t("awardsNone"))}</small>`}
-    </div>`;
+  pauseBanner.style.display = "block";
+  pauseBanner.innerHTML = `
+    <b>${escapeHtml(t("pauseBannerTitle"))}</b><br>
+    ${escapeHtml(t("pauseBannerText"))}<br>
+    <small>${escapeHtml(t("pauseRemaining"))}: <b>${escapeHtml(msToMmSs(remaining))}</b></small>
+  `;
 }
+
+// ==========================
+// Recap modal
+// ==========================
+recapBtn?.addEventListener("click", () => {
+  playSound("tap");
+  modalBack.style.display = "flex";
+});
+closeRecapBtn?.addEventListener("click", () => {
+  modalBack.style.display = "none";
+});
+modalBack?.addEventListener("click", (e) => {
+  if (e.target === modalBack) modalBack.style.display = "none";
+});
 
 // ==========================
 // Load + render (no blinking)
 // ==========================
 let lastRenderKey = "";
+let lastComputed = null;
 
 async function loadAll() {
   try {
     const today = todayISODate();
     const todayStr = new Date().toDateString();
 
-    const [memRes, chkRes, reactRes] = await Promise.all([
+    const [memRes, chkRes, reactRes, sigRes] = await Promise.all([
       supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
       supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
       supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
+      supa.from("signals").select("*").eq("room_code", room).eq("type", "pause").order("created_at", { ascending: false }).limit(1),
     ]);
 
     if (memRes.error) throw memRes.error;
     if (chkRes.error) throw chkRes.error;
     if (reactRes.error) throw reactRes.error;
+    if (sigRes.error) throw sigRes.error;
 
     const memories = memRes.data || [];
     const checkinsToday = chkRes.data || [];
     const reactions = reactRes.data || [];
+    const pauseSignal = (sigRes.data && sigRes.data[0]) ? sigRes.data[0] : null;
 
     const memoriesTodayCount = memories.filter(m => new Date(m.created_at).toDateString() === todayStr).length;
 
@@ -936,10 +914,8 @@ async function loadAll() {
     for (const r of reactions) {
       const memId = String(r.memory_id);
       if (!reactionsByMemory[memId]) reactionsByMemory[memId] = { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
-
       if (reactionsByMemory[memId][r.emoji] !== undefined) reactionsByMemory[memId][r.emoji] += 1;
       reactionsByMemory[memId].total += 1;
-
       if (new Date(r.created_at).toDateString() === todayStr) reactionsTodayCount += 1;
     }
 
@@ -955,6 +931,16 @@ async function loadAll() {
     loadMyMoodSelection(checkinsToday);
     renderMission();
 
+    const { motd } = renderMOTD(memories, reactionsByMemory);
+
+    renderPauseBanner(pauseSignal);
+
+    // Update recap modal content from latest computed values
+    lastComputed = { memoriesTodayCount, reactionsTodayCount, checkinsToday, motd, awardsHtml: awardsOut.innerHTML };
+    recapModalKpis.innerHTML = recapOut.innerHTML;
+    recapModalMotd.innerHTML = motdOut.innerHTML;
+    recapModalAwards.innerHTML = awardsOut.innerHTML;
+
     // Render memories only when changed
     const renderKey = memories
       .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
@@ -968,7 +954,7 @@ async function loadAll() {
         return `
           <div class="memoryCard">
             <b>${escapeHtml(m.name)}</b>
-            <small> — ${new Date(m.created_at).toLocaleString()}</small>
+            <small> — ${escapeHtml(fmtLocal(m.created_at))}</small>
             <div style="margin-top:6px;">${escapeHtml(m.moment)}</div>
 
             <div class="memoryCardActions">
@@ -987,7 +973,12 @@ async function loadAll() {
   }
 }
 
-// Start: apply saved language
+// Start
 applyLanguage();
-setInterval(loadAll, 5000);
+setInterval(() => {
+  loadAll();
+  // keep pause countdown ticking even without new DB fetch
+  // (banner auto-hides after 10 minutes)
+}, 5000);
+
 loadAll();
