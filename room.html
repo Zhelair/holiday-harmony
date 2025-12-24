@@ -1,1 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Holiday Harmony — Room</title>
+  <style>
+    body{font-family:system-ui,Arial;max-width:860px;margin:24px auto;padding:0 14px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .pill{border:1px solid #ddd;border-radius:999px;padding:8px 12px;max-width:100%;overflow:auto}
+    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
+    input,textarea,button{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:8px 0}
+    button{font-weight:800;cursor:pointer}
+    small{color:#666}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width: 780px){
+      .grid{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>🏠 Room: <span id="roomLabel"></span></h1>
+    <div class="pill" id="shareLink"></div>
+  </div>
 
+  <div class="card">
+    <h3>📊 Family Dashboard</h3>
+    <div id="happinessLevel">Loading family vibes…</div>
+    <small>Based on how many happy moments were posted today.</small>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>✨ Memory Vault</h3>
+      <input id="name" placeholder="Your name" />
+      <textarea id="moment" rows="3" placeholder="Happy moment (e.g. Dad laughed at my joke — miracles happen)"></textarea>
+      <button id="postBtn">Post memory</button>
+      <small id="status"></small>
+    </div>
+
+    <div class="card">
+      <h3>🎲 Activity Generator</h3>
+      <button id="activityBtn">Give us something fun</button>
+      <div id="activityOut"></div>
+      <small>Instant “what do we do now?” rescue button.</small>
+    </div>
+  </div>
+
+  <div id="list"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
