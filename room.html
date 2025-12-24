@@ -6,9 +6,8 @@
   <title>Holiday Harmony — Room</title>
   <style>
     :root{
-      --bg1:#f6f7ff; --bg2:#ffffff; --card:#ffffffcc; --border:#e7e7ef;
-      --text:#1c1c22; --muted:#6b6b78; --shadow:0 10px 30px rgba(0,0,0,.06);
-      --radius:16px;
+      --card:#ffffffcc; --border:#e7e7ef; --text:#1c1c22; --muted:#6b6b78;
+      --shadow:0 10px 30px rgba(0,0,0,.06); --radius:16px;
     }
     body{
       font-family: system-ui, Arial;
@@ -23,10 +22,8 @@
       background-position: center;
       background-attachment: fixed;
     }
-    .top{
-      display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 6px;
-    }
-    h1{ margin: 0; }
+    .top{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 6px;}
+    h1{margin:0}
     .pill{
       border:1px solid var(--border); background:#fff; border-radius:999px; padding:10px 12px;
       max-width:100%; overflow:auto; box-shadow: var(--shadow); font-size: 14px;
@@ -37,46 +34,36 @@
       animation: fadeIn .35s ease;
     }
     @keyframes fadeIn{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
-
-    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    .grid{display:grid; grid-template-columns: 1fr; gap:12px;}
     @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
-
     input,textarea,button{
       width:100%; padding:12px; border-radius:14px; border:1px solid var(--border); margin:8px 0;
       font-size: 15px; background:#fff;
     }
-    textarea{ resize: vertical; }
-    button{
-      font-weight:900; cursor:pointer; transition: transform .06s ease, box-shadow .2s ease;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    }
-    button:active{ transform: translateY(1px); }
-    small{ color: var(--muted); }
+    textarea{resize:vertical;}
+    button{font-weight:900; cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,.06);}
+    button:active{transform: translateY(1px);}
+    small{color: var(--muted);}
 
-    .moodRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px; }
+    .moodRow{display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px;}
     .moodBtn{
       flex: 1; min-width: 120px; display:flex; align-items:center; justify-content:center; gap:8px;
       padding:12px; border-radius: 14px; border:1px solid var(--border); background:#fff; font-weight: 900;
     }
-    .moodBtn span.emoji{ font-size: 18px; }
-    .moodSelected{ outline: 3px solid rgba(0,0,0,.08); }
+    .moodBtn span.emoji{font-size:18px;}
+    .moodSelected{outline: 3px solid rgba(0,0,0,.08);}
 
-    .kpiRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+    .kpiRow{display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;}
     .kpi{
       border:1px solid var(--border); background:#fff; border-radius: 14px; padding: 10px 12px;
       flex: 1; min-width: 200px;
     }
-    .kpi b{ display:block; font-size: 16px; }
-
-    .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
-    .miniRow button{ flex:1; min-width: 200px; }
-
-    .checkRow{ display:flex; align-items:center; gap:10px; margin-top:6px; }
-    .checkRow input{ width:auto; margin:0; }
-
-    .tipBox{
-      border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;
-    }
+    .kpi b{display:block; font-size: 16px;}
+    .miniRow{display:flex; gap:10px; flex-wrap:wrap;}
+    .miniRow button{flex:1; min-width: 200px;}
+    .checkRow{display:flex; align-items:center; gap:10px; margin-top:6px;}
+    .checkRow input{width:auto; margin:0;}
+    .tipBox{border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;}
   </style>
 </head>
 <body>
@@ -85,7 +72,7 @@
     <div class="pill" id="shareLink"></div>
   </div>
 
-  <!-- ✅ Debug pill (tells us why it doesn’t load) -->
+  <!-- Debug pill: shows why loading failed -->
   <div class="pill" id="debug">Booting…</div>
 
   <div class="card">
@@ -167,9 +154,8 @@
 
   <div id="list"></div>
 
-  <!-- Load Supabase first -->
+  <!-- Supabase UMD (works on most phones) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- Then app -->
   <script src="app.js"></script>
 </body>
 </html>
