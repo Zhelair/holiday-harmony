@@ -11,9 +11,14 @@
 
   <style>
     :root{
-      --card:#ffffffcc; --border:#e7e7ef; --text:#1c1c22; --muted:#6b6b78;
-      --shadow:0 10px 30px rgba(0,0,0,.08); --radius:18px;
+      --card:#ffffffcc;
+      --border:#e7e7ef;
+      --text:#1c1c22;
+      --muted:#6b6b78;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:18px;
     }
+
     body{
       font-family: Inter, system-ui, Arial;
       max-width: 1100px;
@@ -27,16 +32,32 @@
       background-position: center;
       background-attachment: fixed;
     }
+
     .top{
-      display:flex; justify-content:space-between; align-items:center;
-      gap:12px; flex-wrap:wrap; margin-bottom: 6px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 6px;
     }
-    h1{margin:0; font-size: 22px}
+
+    h1{ margin:0; font-size: 22px; }
+
     .pill{
-      border:1px solid var(--border); background:#fff; border-radius:999px; padding:10px 12px;
-      max-width:100%; overflow:auto; box-shadow: var(--shadow); font-size: 14px;
-      display:flex; align-items:center; gap:10px;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:999px;
+      padding:10px 12px;
+      max-width:100%;
+      overflow:auto;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
     }
+
     .pill button{
       border:1px solid var(--border);
       background:#fff;
@@ -46,7 +67,9 @@
       cursor:pointer;
       width:auto;
       margin:0;
+      transition: transform .12s ease;
     }
+    .pill button:active{ transform: translateY(1px); }
     .pill input{ width:auto; margin:0; }
 
     .card{
@@ -57,9 +80,13 @@
       background: var(--card);
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
-      animation: fadeIn .30s ease;
+      animation: fadeIn .24s ease;
     }
-    @keyframes fadeIn{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
+
+    @keyframes fadeIn{
+      from{ opacity:0; transform:translateY(5px) }
+      to{ opacity:1; transform:translateY(0) }
+    }
 
     .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
     @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
@@ -74,38 +101,103 @@
       background:#fff;
     }
     textarea{ resize: vertical; }
+
     button{
       font-weight:900;
       cursor:pointer;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      transition: transform .12s ease, box-shadow .12s ease;
     }
+    button:hover{ box-shadow: 0 10px 26px rgba(0,0,0,.09); }
     button:active{ transform: translateY(1px); }
+
     small{ color: var(--muted); }
 
     .kpiRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
     .kpi{
-      border:1px solid var(--border); background:#fff; border-radius: 14px; padding: 10px 12px;
-      flex: 1; min-width: 210px;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      flex: 1;
+      min-width: 210px;
     }
     .kpi b{ display:block; font-size: 16px; }
 
     .moodRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px; }
     .moodBtn{
-      flex: 1; min-width: 120px; display:flex; align-items:center; justify-content:center; gap:8px;
-      padding:12px; border-radius: 14px; border:1px solid var(--border); background:#fff; font-weight: 900;
+      flex: 1;
+      min-width: 120px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-weight: 900;
     }
     .moodBtn span{ font-size: 18px; }
-    .moodSelected{ outline: 3px solid rgba(0,0,0,.08); }
+    .moodSelected{ outline: 3px solid rgba(0,0,0,.09); }
 
     .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
     .miniRow button{ flex:1; min-width: 200px; }
 
     .tipBox{
-      border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;
+      border:1px solid #e7e7ef;
+      border-radius:14px;
+      padding:12px;
+      background:#fff;
+    }
+
+    /* ---- Vibe bar ---- */
+    .vibeWrap{
+      margin-top:12px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:999px;
+      overflow:hidden;
+      height:14px;
+    }
+    .vibeBar{
+      height:100%;
+      width:0%;
+      transition: width .35s ease;
+      background: linear-gradient(90deg, #ffe7b3, #fff2d6);
+    }
+
+    /* ---- Memory feed grid ---- */
+    .memoryGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+      margin-bottom: 18px;
+    }
+    @media (min-width: 980px){
+      .memoryGrid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .memoryCard{
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      animation: fadeIn .22s ease;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .memoryCard:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(0,0,0,.10);
     }
 
     .memoryCardActions{
-      display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
     }
     .reactBtn{
       border:1px solid var(--border);
@@ -123,6 +215,7 @@
 <body>
   <div class="top">
     <h1>🏠 Room: <span id="roomLabel"></span></h1>
+
     <div class="pill" id="shareLink"></div>
 
     <div class="pill">
@@ -139,7 +232,6 @@
     <small>Co-op family mini-game: collect good moments, keep the vibe warm.</small>
   </div>
 
-  <!-- NEW Daily Challenge (no DB) -->
   <div class="card">
     <h3>🎯 Today’s Mission</h3>
     <div id="missionOut" class="tipBox">Loading mission…</div>
@@ -147,25 +239,30 @@
       <button id="missionDoneBtn" type="button">✅ I did it</button>
       <button id="missionNewBtn" type="button">🎲 New mission (just for me)</button>
     </div>
-    <small>Mission is daily + room-based. “New mission” only changes on your device.</small>
+    <small>Shared daily mission + personal reroll option.</small>
   </div>
 
   <div class="card">
     <h3>📊 Family Dashboard</h3>
     <div id="happinessLevel">Loading family vibes…</div>
+
     <div class="kpiRow">
       <div class="kpi"><b id="kpiMemories">—</b><small>Happy moments today</small></div>
       <div class="kpi"><b id="kpiCheckins">—</b><small>Mood check-ins today</small></div>
       <div class="kpi"><b id="kpiMood">—</b><small>Today’s vibe</small></div>
       <div class="kpi"><b id="kpiReacts">—</b><small>Reactions today</small></div>
     </div>
+
+    <div class="vibeWrap" title="Family vibe meter">
+      <div id="vibeBar" class="vibeBar"></div>
+    </div>
+
     <div style="margin-top:10px;" class="tipBox" id="recapOut">Loading recap…</div>
   </div>
 
   <div class="grid">
     <div class="card">
       <h3>✅ Daily Mood Check-in</h3>
-
       <input id="name" placeholder="Your name" />
       <small>Pick your mood for today (you can change it later).</small>
 
@@ -203,7 +300,7 @@
     <div class="card">
       <h3>🧾 Today’s Mood Board</h3>
       <div id="moodBoard">Loading…</div>
-      <small>Shows who checked in today (by name).</small>
+      <small>Shows who checked in today.</small>
     </div>
   </div>
 
@@ -213,9 +310,8 @@
       <textarea id="moment" rows="3" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
       <button id="postBtn" type="button">Post memory</button>
       <small id="status"></small>
-
       <div class="tipBox" style="margin-top:10px;">
-        <b>Reactions:</b> Tap ❤️ 😂 ⭐ on any memory.
+        <b>Reactions:</b> Tap ❤️ 😂 ⭐ on any memory (tap again to undo).
       </div>
     </div>
 
@@ -227,10 +323,9 @@
     </div>
   </div>
 
-  <div id="list"></div>
+  <div id="list" class="memoryGrid"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- IMPORTANT: now back to app.js -->
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=100"></script>
 </body>
 </html>
