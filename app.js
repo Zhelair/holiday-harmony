@@ -4,7 +4,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
 // ---- URL params
 const params = new URLSearchParams(location.search);
@@ -35,7 +35,9 @@ const choreBtn = document.getElementById("choreBtn");
 const defuseOut = document.getElementById("defuseOut");
 
 const awardsOut = document.getElementById("awardsOut");
+
 const tipsOut = document.getElementById("tipsOut");
+const newTipBtn = document.getElementById("newTipBtn");
 
 const privateToggle = document.getElementById("privateToggle");
 const privateList = document.getElementById("privateList");
@@ -68,7 +70,6 @@ function todayISODate() {
 }
 
 function playSound(which) {
-  // Optional: only plays if files exist
   const map = {
     tap: "assets/sounds/tap.mp3",
     success: "assets/sounds/success.mp3",
@@ -78,7 +79,7 @@ function playSound(which) {
   try { new Audio(src).play(); } catch {}
 }
 
-// ---- Remember name + role on this device
+// ---- Remember name + role
 function loadIdentity() {
   const savedName = localStorage.getItem("hh_name") || "";
   const savedRole = localStorage.getItem("hh_role") || "";
@@ -103,7 +104,7 @@ nameEl?.addEventListener("input", () => {
 // ---- Activity generator
 const activities = [
   "2 Truths and a Lie (one round each)",
-  "Pick a movie: everyone suggests 1, then vote",
+  "Pick a movie: everyone suggests 1 title, then vote",
   "10-minute walk together (no big topics — just fresh air 😄)",
   "Tea + dessert: each person says one good thing from today",
   "Photo challenge: recreate an old family photo pose",
@@ -121,7 +122,7 @@ document.getElementById("activityBtn")?.addEventListener("click", () => {
     `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
-// ---- Reset Moment (Defuse)
+// ---- Reset Moment (friendly, not insulting)
 const defuseLines = [
   "Reset moment: 3 slow breaths. Then we continue with softer voices. 🙂",
   "Quick pause: water + a small smile. Team ‘family’ is back online.",
@@ -132,9 +133,8 @@ const defuseLines = [
   "If someone is tired: it’s not personal. It’s just… tiredness. We’ve all been there.",
   "Humor mode: say your complaint like a Disney villain. Everyone laughs, problem shrinks.",
   "Peace offering: bring a snack. Snacks solve many mysteries.",
-  "New plan: let’s be kind first, correct later. Works weirdly well."
+  "New plan: kind first, correct later. Works weirdly well."
 ];
-
 
 defuseBtn?.addEventListener("click", () => {
   playSound("tap");
@@ -262,7 +262,7 @@ function renderPrivateMemories() {
     </div>`;
 }
 
-// ---- Memories: post
+// ---- Post memory
 async function postMemory() {
   if (statusEl) statusEl.textContent = "";
 
@@ -276,7 +276,6 @@ async function postMemory() {
 
   playSound("tap");
 
-  // Private?
   if (privateToggle?.checked) {
     addPrivateMemory(name, moment);
     momentEl.value = "";
@@ -303,7 +302,7 @@ async function postMemory() {
 
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
 
-// ---- Dashboard + Mood board + Awards
+// ---- Dashboard helpers
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
   for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
@@ -339,8 +338,8 @@ function updateDashboard(memoriesTodayCount, checkinsToday) {
     note = "Love this. Keep it simple: food, laughs, and a little rest.";
   }
   if (counts.bad >= 2 && checkinsToday.length >= 3) {
-    label = "🧯 Reset moment";
-    note = "A short break can save the whole evening: tea, walk, or a quick activity.";
+    label = "🧯 Gentle reset";
+    note = "A short break can save the whole evening: tea, walk, music, or a quick activity.";
   }
 
   el.innerHTML = `
@@ -369,20 +368,6 @@ function updateMoodBoard(checkinsToday) {
     `).join("");
 }
 
-function updateTips(memoriesTodayCount, checkinsToday) {
-  const { counts } = summarizeMood(checkinsToday);
-  const tips = [];
-
-  if (counts.bad >= 2) tips.push("🧯 A couple people feel overloaded → tea/walk mode is perfect.");
-  if (memoriesTodayCount === 0) tips.push("✨ No happy moments yet → post one tiny win (even “good coffee” counts).");
-  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. It’s one tap and it helps everyone sync.");
-  tips.push("🎬 Decide entertainment by voting: everyone suggests 1 movie, then vote.");
-  tips.push("🧹 A 5-minute tidy sprint with music = surprisingly good mood booster.");
-  tips.push("🫶 One compliment each at dinner. Keep it simple and real.");
-
-  tipsOut.innerHTML = tips.map(t => `<div style="margin:8px 0;">${escapeHtml(t)}</div>`).join("");
-}
-
 function updateAwards(memories, checkinsToday) {
   if (!awardsOut) return;
 
@@ -402,7 +387,7 @@ function updateAwards(memories, checkinsToday) {
 
   const mostMemories = pickTop(byName);
   const calmStar = moodNames.good.length ? moodNames.good[0] : null;
-  const gentleHero = moodNames.ok.length ? moodNames.ok[0] : null;
+  const steadySupport = moodNames.ok.length ? moodNames.ok[0] : null;
   const needsCare = moodNames.bad.length ? moodNames.bad[0] : null;
 
   const checkedNames = checkinsToday.map(c => c.name);
@@ -411,7 +396,7 @@ function updateAwards(memories, checkinsToday) {
   const awards = [];
   if (mostMemories) awards.push(`✨ <b>Memory Maker</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
   if (calmStar) awards.push(`🕊 <b>Calm Star</b>: ${escapeHtml(calmStar)}`);
-  if (gentleHero) awards.push(`🙂 <b>Steady Support</b>: ${escapeHtml(gentleHero)}`);
+  if (steadySupport) awards.push(`🙂 <b>Steady Support</b>: ${escapeHtml(steadySupport)}`);
   if (needsCare) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(needsCare)} (self-reported, totally normal)`);
   if (randName) awards.push(`🎁 <b>Bonus Warmth</b>: ${escapeHtml(randName)}`);
 
@@ -426,7 +411,58 @@ function updateAwards(memories, checkinsToday) {
     </div>`;
 }
 
-// ---- Load everything
+// ---- Quick Tips (smarter + “Give me a tip” button)
+let lastTipsPool = [];
+
+function pickRandom(arr, count = 3) {
+  const copy = [...arr];
+  const out = [];
+  while (copy.length && out.length < count) {
+    out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+  }
+  return out;
+}
+
+function renderTips(tips) {
+  tipsOut.innerHTML = `
+    ${tips.map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("")}
+  `;
+}
+
+function updateTips(memoriesTodayCount, checkinsToday) {
+  const { counts } = summarizeMood(checkinsToday);
+  const tips = [];
+
+  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. It’s one tap and helps everyone sync.");
+  else if (checkinsToday.length === 1) tips.push("✅ One person checked in. Invite one more — it’s more fun together.");
+
+  if (memoriesTodayCount === 0) tips.push("✨ No happy moments posted yet. Add one tiny win (even “good tea” counts).");
+  else if (memoriesTodayCount >= 4) tips.push("📸 You’re collecting great moments today. Take one photo together — instant memory.");
+
+  if (counts.bad >= 2) {
+    tips.push("🧯 A couple people feel overloaded → tea/walk mode is perfect.");
+    tips.push("🎧 Soft music for 10 minutes changes the whole room (quiet magic).");
+  }
+
+  tips.push("🫶 Compliment round at dinner: one sincere sentence each. Keep it simple.");
+  tips.push("🎬 Movie decision hack: everyone suggests 1 title, then vote.");
+  tips.push("🧹 A 5-minute tidy sprint with music = fast mood reset.");
+  tips.push("🍵 Tea break rule: no problem-solving during tea. Just warm vibes.");
+  tips.push("🎲 Use Activity Generator when conversation gets stuck.");
+  tips.push("👂 ‘Curious question’ rule: ask 1 question before giving advice.");
+  tips.push("😂 Tell a family story: ‘Remember when…’ is the best glue.");
+
+  lastTipsPool = tips;
+  renderTips(pickRandom(tips, 3));
+}
+
+newTipBtn?.addEventListener("click", () => {
+  playSound("tap");
+  if (!lastTipsPool.length) return;
+  renderTips(pickRandom(lastTipsPool, 3));
+});
+
+// ---- Load all
 async function loadAll() {
   const today = todayISODate();
 
@@ -457,8 +493,8 @@ async function loadAll() {
 
   updateDashboard(memoriesTodayCount, checkinsToday);
   updateMoodBoard(checkinsToday);
-  updateTips(memoriesTodayCount, checkinsToday);
   updateAwards(memories, checkinsToday);
+  updateTips(memoriesTodayCount, checkinsToday);
   loadMyMoodSelection(checkinsToday);
   renderPrivateMemories();
 
@@ -471,6 +507,5 @@ async function loadAll() {
   `).join("");
 }
 
-// Refresh
 setInterval(loadAll, 4000);
 loadAll();
