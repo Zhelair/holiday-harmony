@@ -1,1 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Holiday Harmony</title>
+  <style>
+    body{font-family:system-ui,Arial;max-width:760px;margin:30px auto;padding:0 14px}
+    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
+    input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:8px 0}
+    button{font-weight:800;cursor:pointer}
+    small{color:#666}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+  </style>
+</head>
+<body>
+  <h1>🎄 Holiday Harmony</h1>
+  <small>Survive under one roof. Collect happy moments. Keep the vibe alive.</small>
 
+  <div class="card">
+    <h3>Create / Enter a room</h3>
+    <div class="row">
+      <input id="roomCode" placeholder="Room code (e.g. xmas2025)" />
+      <input id="yourName" placeholder="Your name (optional)" />
+    </div>
+    <button id="goBtn">Go to room</button>
+    <small>Share the room link with your family. Everyone uses the same code.</small>
+  </div>
+
+  <div class="card">
+    <h3>Join</h3>
+    <input id="joinCode" placeholder="Enter room code (e.g. xmas2025)" />
+    <button id="joinBtn">Join</button>
+  </div>
+
+  <script>
+    function goToRoom(code){
+      code = (code || "").trim();
+      const name = (document.getElementById("yourName").value || "").trim();
+
+      if(!code){ alert("Please enter a room code."); return; }
+
+      let url = "room.html?room=" + encodeURIComponent(code);
+      if (name) url += "&name=" + encodeURIComponent(name);
+
+      location.href = url;
+    }
+
+    document.getElementById("goBtn").addEventListener("click", () => {
+      goToRoom(document.getElementById("roomCode").value);
+    });
+
+    document.getElementById("joinBtn").addEventListener("click", () => {
+      goToRoom(document.getElementById("joinCode").value);
+    });
+  </script>
+</body>
+</html>
