@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Holiday Harmony — Room</title>
 
-  <!-- Nice font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -65,7 +64,7 @@
     .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
     @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
 
-    input,textarea,button,select{
+    input,textarea,button{
       width:100%;
       padding:12px;
       border-radius:14px;
@@ -105,23 +104,6 @@
       border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;
     }
 
-    .roleRow{
-      display:flex; gap:10px; flex-wrap:wrap;
-      margin-top: 6px;
-    }
-    .roleBtn{
-      flex:1; min-width: 140px;
-      border:1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background:#fff;
-      font-weight:900;
-      cursor:pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      text-align:center;
-    }
-    .roleSelected{ outline: 3px solid rgba(0,0,0,.08); }
-
     .memoryCardActions{
       display:flex;
       gap:10px;
@@ -150,11 +132,10 @@
     <div class="pill">
       🔊 Sound
       <input id="soundToggle" type="checkbox" checked>
-      <button id="ambienceBtn" type="button">🌙 Ambience</button>
+      <button id="partyBtn" type="button">🎉 Party</button>
     </div>
   </div>
 
-  <!-- Debug pill (helps on phones) -->
   <div class="pill" id="debug">Booting…</div>
 
   <div class="card">
@@ -162,14 +143,15 @@
     <small>Co-op family mini-game: collect good moments, keep the vibe warm.</small>
   </div>
 
+  <!-- Reworked “Daily Challenge” -->
   <div class="card">
-    <h3>🎁 Daily Challenge</h3>
-    <div id="challengeOut">Loading today’s mission…</div>
+    <h3>🎯 Today’s Mission</h3>
+    <div id="missionOut" class="tipBox">Loading mission…</div>
     <div class="miniRow" style="margin-top:10px;">
-      <button id="challengeDoneBtn" type="button">✅ Mark as done (me)</button>
-      <button id="challengeRerollBtn" type="button">🎲 Reroll (today)</button>
+      <button id="missionDoneBtn" type="button">✅ I did it</button>
+      <button id="missionNewBtn" type="button">🎲 New mission (just for me)</button>
     </div>
-    <small>Reroll is for your room only (it updates today’s challenge).</small>
+    <small>Mission is daily + room-based. “New mission” only changes on your device.</small>
   </div>
 
   <div class="card">
@@ -189,27 +171,21 @@
       <h3>✅ Daily Mood Check-in</h3>
 
       <input id="name" placeholder="Your name" />
-      <small id="roleLine"></small>
+      <small>Pick your mood for today (you can change it later).</small>
 
-      <div class="roleRow">
-        <div class="roleBtn" id="roleParent">👨‍👩‍👧 Parent</div>
-        <div class="roleBtn" id="roleChild">🧒 Child</div>
-        <div class="roleBtn" id="roleRelative">🧓 Relative</div>
-        <div class="roleBtn" id="roleGuest">🎩 Guest</div>
-      </div>
-
-      <small style="display:block; margin-top:10px;">Pick your mood for today (you can change it later).</small>
       <div class="moodRow">
         <button class="moodBtn" id="moodGood" type="button"><span>😇</span> Calm</button>
         <button class="moodBtn" id="moodOk" type="button"><span>😐</span> Okay</button>
         <button class="moodBtn" id="moodBad" type="button"><span>😤</span> Overloaded</button>
       </div>
+
       <small id="moodStatus"></small>
 
       <div class="miniRow" style="margin-top:10px;">
         <button id="defuseBtn" type="button">🧯 Reset Moment</button>
         <button id="choreBtn" type="button">🎡 Chore Roulette</button>
       </div>
+
       <div id="defuseOut"></div>
     </div>
 
@@ -239,12 +215,10 @@
     <div class="card">
       <h3>✨ Memory Vault</h3>
       <textarea id="moment" rows="3" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
-
       <button id="postBtn" type="button">Post memory</button>
       <small id="status"></small>
-
       <div class="tipBox" style="margin-top:10px;">
-        <b>Reactions:</b> After posting, everyone can tap ❤️ 😂 ⭐ on any memory.
+        <b>Reactions:</b> Tap ❤️ 😂 ⭐ on any memory.
       </div>
     </div>
 
@@ -258,10 +232,7 @@
 
   <div id="list"></div>
 
-  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-  <!-- Your app -->
-  <script src="app.js?v=7"></script>
+  <script src="app.v2.js?v=9"></script>
 </body>
 </html>
