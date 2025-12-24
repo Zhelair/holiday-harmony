@@ -85,6 +85,9 @@
     <div class="pill" id="shareLink"></div>
   </div>
 
+  <!-- ✅ Debug pill (tells us why it doesn’t load) -->
+  <div class="pill" id="debug">Booting…</div>
+
   <div class="card">
     <h3>📊 Family Dashboard</h3>
     <div id="happinessLevel">Loading family vibes…</div>
@@ -164,8 +167,9 @@
 
   <div id="list"></div>
 
-  <!-- ✅ More compatible on phones than module imports -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Load Supabase first -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- Then app -->
   <script src="app.js"></script>
 </body>
 </html>
