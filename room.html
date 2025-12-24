@@ -18,7 +18,6 @@
       --shadow:0 10px 30px rgba(0,0,0,.08);
       --radius:18px;
     }
-
     body{
       font-family: Inter, system-ui, Arial;
       max-width: 1100px;
@@ -41,7 +40,6 @@
       flex-wrap:wrap;
       margin-bottom: 6px;
     }
-
     h1{ margin:0; font-size: 22px; }
 
     .pill{
@@ -57,7 +55,6 @@
       align-items:center;
       gap:10px;
     }
-
     .pill button{
       border:1px solid var(--border);
       background:#fff;
@@ -82,16 +79,12 @@
       backdrop-filter: blur(8px);
       animation: fadeIn .24s ease;
     }
-
     @keyframes fadeIn{
       from{ opacity:0; transform:translateY(5px) }
       to{ opacity:1; transform:translateY(0) }
     }
 
-    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
-    @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
-
-    input,textarea,button{
+    input,textarea,button,select{
       width:100%;
       padding:12px;
       border-radius:14px;
@@ -110,8 +103,10 @@
     }
     button:hover{ box-shadow: 0 10px 26px rgba(0,0,0,.09); }
     button:active{ transform: translateY(1px); }
-
     small{ color: var(--muted); }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
 
     .kpiRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
     .kpi{
@@ -144,13 +139,6 @@
     .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
     .miniRow button{ flex:1; min-width: 200px; }
 
-    .tipBox{
-      border:1px solid #e7e7ef;
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-    }
-
     /* ---- Vibe bar ---- */
     .vibeWrap{
       margin-top:12px;
@@ -173,11 +161,7 @@
       from { background-position: 0% 0%; }
       to   { background-position: 200% 0%; }
     }
-
-    /* pulse animation when vibe changes */
-    .vibePulse{
-      animation: vibePulse 700ms ease;
-    }
+    .vibePulse{ animation: vibePulse 700ms ease; }
     @keyframes vibePulse{
       0%   { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
       30%  { box-shadow: 0 0 26px rgba(0,0,0,.10); transform: scale(1.01); }
@@ -228,6 +212,47 @@
       transition: transform .10s ease;
     }
     .reactBtn:active{ transform: scale(1.05); }
+
+    /* ---- Pause banner ---- */
+    .pauseBanner{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.95);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      margin: 12px 0;
+      display:none;
+    }
+
+    /* ---- Recap modal ---- */
+    .modalBack{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.40);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 14px;
+      z-index: 9999;
+    }
+    .modal{
+      width:min(820px, 100%);
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 70px rgba(0,0,0,.25);
+      padding: 16px;
+    }
+    .modal h2{ margin: 4px 0 8px; }
+    .modal .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .modal .box{
+      border:1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      flex:1;
+      min-width: 220px;
+      background: #fafafe;
+    }
   </style>
 </head>
 
@@ -241,25 +266,36 @@
       <span id="soundLabel">🔊 Sound</span>
       <input id="soundToggle" type="checkbox" checked>
       <button id="partyBtn" type="button">🎉 Party</button>
+      <button id="recapBtn" type="button">📸 Recap</button>
       <button id="langBtn" type="button">EN / RU</button>
     </div>
   </div>
 
   <div class="pill" id="debug">Booting…</div>
 
+  <div id="pauseBanner" class="pauseBanner"></div>
+
   <div class="card">
     <h2 id="appTitle" style="margin:0;">Holiday Harmony</h2>
     <small id="appSubtitle">Co-op family mini-game: collect good moments, keep the vibe warm.</small>
   </div>
 
-  <div class="card">
-    <h3 id="missionTitle">🎯 Today’s Gentle Challenge</h3>
-    <div id="missionOut" class="tipBox">Loading…</div>
-    <div class="miniRow" style="margin-top:10px;">
-      <button id="missionDoneBtn" type="button">✅ I did it</button>
-      <button id="missionNewBtn" type="button">🎲 New (just for me)</button>
+  <div class="grid">
+    <div class="card">
+      <h3 id="motdTitle">⭐ Memory of the Day</h3>
+      <div id="motdOut"><small>Loading…</small></div>
+      <small id="motdHint">Most loved memory today (by reactions).</small>
     </div>
-    <small id="missionHint">Shared daily challenge + personal reroll option.</small>
+
+    <div class="card">
+      <h3 id="missionTitle">🎯 Today’s Gentle Challenge</h3>
+      <div id="missionOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">Loading…</div>
+      <div class="miniRow" style="margin-top:10px;">
+        <button id="missionDoneBtn" type="button">✅ I did it</button>
+        <button id="missionNewBtn" type="button">🎲 New (just for me)</button>
+      </div>
+      <small id="missionHint">Shared daily challenge + personal reroll option.</small>
+    </div>
   </div>
 
   <div class="card">
@@ -277,7 +313,7 @@
       <div id="vibeBar" class="vibeBar"></div>
     </div>
 
-    <div style="margin-top:10px;" class="tipBox" id="recapOut">Loading…</div>
+    <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;" id="recapOut">Loading…</div>
   </div>
 
   <div class="grid">
@@ -295,11 +331,17 @@
       <small id="moodStatus"></small>
 
       <div class="miniRow" style="margin-top:10px;">
+        <button id="pauseBtn" type="button">🧘 I need a pause</button>
         <button id="defuseBtn" type="button">🧯 Reset Moment</button>
+      </div>
+
+      <div class="miniRow" style="margin-top:10px;">
         <button id="choreBtn" type="button">🎡 Chore Roulette</button>
+        <button id="activityBtn" type="button">🎲 Activity</button>
       </div>
 
       <div id="defuseOut"></div>
+      <div id="activityOut"></div>
     </div>
 
     <div class="card">
@@ -311,26 +353,26 @@
 
   <div class="grid">
     <div class="card">
-      <h3 id="activityTitle">🎲 Activity Generator</h3>
-      <button id="activityBtn" type="button">Give us something fun</button>
-      <div id="activityOut"></div>
-      <small id="activityHint">Instant “what do we do now?” rescue button.</small>
-    </div>
-
-    <div class="card">
-      <h3 id="boardTitle">🧾 Today’s Mood Board</h3>
-      <div id="moodBoard">Loading…</div>
-      <small id="boardHint">Shows who checked in today.</small>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="card">
       <h3 id="vaultTitle">✨ Memory Vault</h3>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+        <select id="tagSelect">
+          <option value="">(no tag)</option>
+          <option value="🍽">🍽 Food</option>
+          <option value="😂">😂 Funny</option>
+          <option value="🎬">🎬 Movie</option>
+          <option value="☕">☕ Tea</option>
+          <option value="🎁">🎁 Gifts</option>
+          <option value="🧸">🧸 Kids</option>
+        </select>
+
+        <button id="postBtn" type="button">Post memory</button>
+      </div>
+
       <textarea id="moment" rows="3" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
-      <button id="postBtn" type="button">Post memory</button>
       <small id="status"></small>
-      <div class="tipBox" style="margin-top:10px;">
+
+      <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
         <b id="reactionsLabel">Reactions:</b>
         <span id="reactionsHint">Tap ❤️ 😂 ⭐ on any memory (tap again to undo).</span>
       </div>
@@ -339,14 +381,48 @@
     <div class="card">
       <h3 id="tipsTitle">📌 Quick Tips</h3>
       <button id="newTipBtn" type="button">Give me a tip</button>
-      <div id="tipsOut" class="tipBox">Loading…</div>
+      <div id="tipsOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">Loading…</div>
       <small id="tipsHint">Short prompts to keep the vibe warm.</small>
     </div>
   </div>
 
+  <div id="moodBoard" class="card"><small>Loading…</small></div>
+
+  <div id="motdDivider" class="card">
+    <small id="feedTitle">✨ Memory Feed</small>
+  </div>
+
   <div id="list" class="memoryGrid"></div>
 
+  <!-- Recap modal -->
+  <div id="modalBack" class="modalBack">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <h2 id="recapTitle">📸 Today’s Recap</h2>
+        <button id="closeRecapBtn" type="button" style="width:auto;">✖</button>
+      </div>
+
+      <div id="recapModalBody">
+        <div class="row">
+          <div class="box" id="recapModalKpis">Loading…</div>
+          <div class="box" id="recapModalMotd">Loading…</div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div class="box" id="recapModalAwards">Loading…</div>
+          <div class="box">
+            <b id="recapHowto">How to share:</b>
+            <div id="recapHowtoText" style="margin-top:8px;">
+              Take a screenshot and send it to the family chat 🙂
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <small id="recapFooterHint">Tip: open this screen on a phone for the best screenshot.</small>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=200"></script>
+  <script src="app.js?v=300"></script>
 </body>
 </html>
