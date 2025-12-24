@@ -90,11 +90,9 @@ function loadIdentity() {
   if (role) roleLineEl.textContent = `Role: ${role}`;
   else roleLineEl.textContent = "";
 
-  // Save back (so URL param also becomes stored)
   if (name) localStorage.setItem("hh_name", name);
   if (role) localStorage.setItem("hh_role", role);
 }
-
 loadIdentity();
 
 nameEl?.addEventListener("input", () => {
@@ -102,19 +100,18 @@ nameEl?.addEventListener("input", () => {
   if (name) localStorage.setItem("hh_name", name);
 });
 
-
 // ---- Activity generator
 const activities = [
   "2 Truths and a Lie (one round each)",
   "Pick a movie: everyone suggests 1, then vote",
-  "10-minute walk together (no heavy topics allowed 😄)",
+  "10-minute walk together (no big topics — just fresh air 😄)",
   "Tea + dessert: each person says one good thing from today",
   "Photo challenge: recreate an old family photo pose",
   "Mini quiz: 'Who said this?' (family quotes edition)",
   "Puzzle/board game for 20 minutes",
-  "Kitchen teamwork: one person chops, one stirs, one tastes (dangerously)",
-  "Quick cleanup sprint: 5 minutes — music on, judgement off",
-  "Story time: each person shares one funny memory from childhood"
+  "Kitchen teamwork: one person chops, one stirs, one tastes (official quality control)",
+  "Quick tidy sprint: 5 minutes with music",
+  "Story time: each person shares one warm memory"
 ];
 
 document.getElementById("activityBtn")?.addEventListener("click", () => {
@@ -124,14 +121,13 @@ document.getElementById("activityBtn")?.addEventListener("click", () => {
     `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
-
-// ---- Defuse button
+// ---- Reset Moment (Defuse)
 const defuseLines = [
-  "You’re not angry. You’re hungry + tired + surrounded by history.",
-  "This argument won’t matter in 72 hours. Your nervous system thinks it’s 1998.",
-  "Drink water. Breathe. Walk 5 minutes. Return as a civilized mammal.",
-  "New rule: no politics, no inheritance talk, no ‘when I was your age’ for 20 minutes.",
-  "Lower your voice by 20%. It makes you automatically 40% more correct. (Science.)"
+  "Quick reset: everyone’s a little tired. Let’s be extra kind for 10 minutes.",
+  "Tiny break helps: water + a deep breath. Then we continue gently. 🙂",
+  "Try ‘soft voice mode’ for 5 minutes. It’s surprisingly effective.",
+  "Switch scene: tea, a short walk, or an activity together. No big talks right now.",
+  "Assume good intentions. Your people love you — even if someone is dramatic about potatoes."
 ];
 
 defuseBtn?.addEventListener("click", () => {
@@ -139,13 +135,12 @@ defuseBtn?.addEventListener("click", () => {
   const pick = defuseLines[Math.floor(Math.random() * defuseLines.length)];
   defuseOut.innerHTML = `
     <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      <b>🧯 Reset:</b> ${escapeHtml(pick)}<br>
-      <small>Try: walk • tea • activity button • silent dishwashing therapy</small>
+      <b>🧯 Reset Moment:</b> ${escapeHtml(pick)}<br>
+      <small>Try: tea • walk • music • activity button</small>
     </div>`;
 });
 
-
-// ---- Chore roulette
+// ---- Chore roulette (friendly)
 const chores = [
   "You wash dishes 🫧",
   "You dry dishes 🍽️",
@@ -153,7 +148,7 @@ const chores = [
   "You choose music 🎵",
   "You make tea ☕",
   "You do a 5-minute tidy sprint 🧹",
-  "You rest. You got lucky 😌",
+  "You rest — you earned it 😌",
   "You pick the movie 🎬",
 ];
 
@@ -163,10 +158,9 @@ choreBtn?.addEventListener("click", () => {
   defuseOut.innerHTML = `
     <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
       <b>🎡 Chore Roulette:</b> ${escapeHtml(pick)}<br>
-      <small>Rule: no complaining until after the chore. (Yes, that includes sighing.)</small>
+      <small>Rule: we do it with good humor. Bonus points for music.</small>
     </div>`;
 });
-
 
 // ---- Mood Check-in (Supabase)
 const moodButtons = {
@@ -227,7 +221,6 @@ async function loadMyMoodSelection(checkinsToday) {
   if (mine.mood === "bad") moodButtons.bad?.classList.add("moodSelected");
 }
 
-
 // ---- Private memories (local only)
 function privateKey() {
   return `hh_private_${room}_${todayISODate()}`;
@@ -262,7 +255,6 @@ function renderPrivateMemories() {
       `).join("")}
     </div>`;
 }
-
 
 // ---- Memories: post
 async function postMemory() {
@@ -305,7 +297,6 @@ async function postMemory() {
 
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
 
-
 // ---- Dashboard + Mood board + Awards
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
@@ -313,7 +304,7 @@ function summarizeMood(checkinsToday) {
 
   let vibe = "No check-ins yet";
   if (checkinsToday.length > 0) {
-    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = "😤 Spicy";
+    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = "😤 Overloaded";
     else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = "😇 Calm";
     else vibe = "😐 Okay";
   }
@@ -330,24 +321,20 @@ function updateDashboard(memoriesTodayCount, checkinsToday) {
   const el = document.getElementById("happinessLevel");
   if (!el) return;
 
-  let label = "😐 Neutral vibes";
-  let note = "Small wins still count. Post one good moment.";
+  let label = "🙂 Cozy start";
+  let note = "Post one happy moment (even a tiny one) — it helps everyone notice the good.";
 
-  if (memoriesTodayCount >= 1 || checkinsToday.length >= 1) {
-    label = "🙂 Warming up";
-    note = "Nice. Keep feeding the good timeline.";
-  }
-  if (memoriesTodayCount >= 3 && counts.bad === 0) {
+  if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) {
     label = "🙂 Good vibes";
-    note = "Solid. Family is cooperating (for now).";
+    note = "Nice. The warm timeline is growing.";
   }
-  if (memoriesTodayCount >= 6 && counts.bad <= 1) {
-    label = "😄 Family on fire";
-    note = "This is suspiciously wholesome. Screenshot it.";
+  if (memoriesTodayCount >= 4 && counts.bad === 0) {
+    label = "😄 Great day together";
+    note = "Love this. Keep it simple: food, laughs, and a little rest.";
   }
   if (counts.bad >= 2 && checkinsToday.length >= 3) {
-    label = "🧯 Tension detected";
-    note = "Defuse button. Walk. Tea. No politics. No inheritance talk.";
+    label = "🧯 Reset moment";
+    note = "A short break can save the whole evening: tea, walk, or a quick activity.";
   }
 
   el.innerHTML = `
@@ -361,15 +348,17 @@ function updateDashboard(memoriesTodayCount, checkinsToday) {
 function updateMoodBoard(checkinsToday) {
   if (!moodBoardEl) return;
   if (checkinsToday.length === 0) {
-    moodBoardEl.innerHTML = `<small>No one checked in yet. Be the first brave soul.</small>`;
+    moodBoardEl.innerHTML = `<small>No one checked in yet. Want to start? 🙂</small>`;
     return;
   }
   const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
+  const moodLabel = (m) => m === "good" ? "calm" : m === "ok" ? "ok" : "overloaded";
+
   moodBoardEl.innerHTML = checkinsToday
     .sort((a,b) => a.name.localeCompare(b.name))
     .map(c => `
       <div style="padding:10px 12px; border:1px solid #e7e7ef; border-radius:14px; margin:8px 0; background:#fff;">
-        <b>${escapeHtml(c.name)}</b> — ${moodEmoji(c.mood)} <small>(${escapeHtml(c.mood)})</small>
+        <b>${escapeHtml(c.name)}</b> — ${moodEmoji(c.mood)} <small>(${escapeHtml(moodLabel(c.mood))})</small>
       </div>
     `).join("");
 }
@@ -378,11 +367,12 @@ function updateTips(memoriesTodayCount, checkinsToday) {
   const { counts } = summarizeMood(checkinsToday);
   const tips = [];
 
-  if (counts.bad >= 2) tips.push("🧯 Two or more people feel spicy → switch to walk/tea mode.");
-  if (memoriesTodayCount === 0) tips.push("✨ No happy moments yet → post one tiny win (even 'good coffee' counts).");
-  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. It’s 1 tap and prevents 10 fights.");
+  if (counts.bad >= 2) tips.push("🧯 A couple people feel overloaded → tea/walk mode is perfect.");
+  if (memoriesTodayCount === 0) tips.push("✨ No happy moments yet → post one tiny win (even “good coffee” counts).");
+  if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. It’s one tap and it helps everyone sync.");
   tips.push("🎬 Decide entertainment by voting: everyone suggests 1 movie, then vote.");
-  tips.push("🧹 5-minute cleanup sprint with music solves 37% of holiday tension.");
+  tips.push("🧹 A 5-minute tidy sprint with music = surprisingly good mood booster.");
+  tips.push("🫶 One compliment each at dinner. Keep it simple and real.");
 
   tipsOut.innerHTML = tips.map(t => `<div style="margin:8px 0;">${escapeHtml(t)}</div>`).join("");
 }
@@ -390,11 +380,8 @@ function updateTips(memoriesTodayCount, checkinsToday) {
 function updateAwards(memories, checkinsToday) {
   if (!awardsOut) return;
 
-  // Memories count per person (from loaded memories list, not only today)
   const byName = {};
-  for (const m of memories) {
-    byName[m.name] = (byName[m.name] || 0) + 1;
-  }
+  for (const m of memories) byName[m.name] = (byName[m.name] || 0) + 1;
 
   const pickTop = (obj) => {
     let bestName = null, bestVal = -1;
@@ -404,25 +391,26 @@ function updateAwards(memories, checkinsToday) {
     return bestName ? { name: bestName, val: bestVal } : null;
   };
 
-  const moodCounts = { good: [], ok: [], bad: [] };
-  for (const c of checkinsToday) moodCounts[c.mood]?.push(c.name);
+  const moodNames = { good: [], ok: [], bad: [] };
+  for (const c of checkinsToday) moodNames[c.mood]?.push(c.name);
 
   const mostMemories = pickTop(byName);
-  const peacekeeper = moodCounts.good.length ? moodCounts.good[0] : null;
-  const spicy = moodCounts.bad.length ? moodCounts.bad[0] : null;
+  const calmStar = moodNames.good.length ? moodNames.good[0] : null;
+  const gentleHero = moodNames.ok.length ? moodNames.ok[0] : null;
+  const needsCare = moodNames.bad.length ? moodNames.bad[0] : null;
 
-  // Little chaos: random “fun award” among checked-in people
   const checkedNames = checkinsToday.map(c => c.name);
   const randName = checkedNames.length ? checkedNames[Math.floor(Math.random()*checkedNames.length)] : null;
 
   const awards = [];
-  if (mostMemories) awards.push(`✨ <b>Memory Machine</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
-  if (peacekeeper) awards.push(`🕊 <b>Peacekeeper</b>: ${escapeHtml(peacekeeper)}`);
-  if (spicy) awards.push(`🌶 <b>Spice Detector</b>: ${escapeHtml(spicy)} (self-reported, no judgement 😄)`);
-  if (randName) awards.push(`🎭 <b>Wildcard Energy</b>: ${escapeHtml(randName)}`);
+  if (mostMemories) awards.push(`✨ <b>Memory Maker</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
+  if (calmStar) awards.push(`🕊 <b>Calm Star</b>: ${escapeHtml(calmStar)}`);
+  if (gentleHero) awards.push(`🙂 <b>Steady Support</b>: ${escapeHtml(gentleHero)}`);
+  if (needsCare) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(needsCare)} (self-reported, totally normal)`);
+  if (randName) awards.push(`🎁 <b>Bonus Warmth</b>: ${escapeHtml(randName)}`);
 
   if (awards.length === 0) {
-    awardsOut.innerHTML = `<small>No awards yet. Add a memory or mood check-in.</small>`;
+    awardsOut.innerHTML = `<small>No awards yet. Add a memory or a mood check-in.</small>`;
     return;
   }
 
@@ -431,7 +419,6 @@ function updateAwards(memories, checkinsToday) {
       ${awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("")}
     </div>`;
 }
-
 
 // ---- Load everything
 async function loadAll() {
@@ -457,7 +444,6 @@ async function loadAll() {
   const memories = memRes.data || [];
   const checkinsToday = chkRes.data || [];
 
-  // Count today's memories (local timezone)
   const todayStr = new Date().toDateString();
   const memoriesTodayCount = memories.filter(m =>
     new Date(m.created_at).toDateString() === todayStr
@@ -470,7 +456,6 @@ async function loadAll() {
   loadMyMoodSelection(checkinsToday);
   renderPrivateMemories();
 
-  // Render memory list
   listEl.innerHTML = memories.map(m => `
     <div class="card">
       <b>${escapeHtml(m.name)}</b>
