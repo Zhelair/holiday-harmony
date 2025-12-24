@@ -2,6 +2,8 @@
 // Holiday Harmony — app.js
 // ==========================
 
+console.log("APP VERSION v2 LOADED");
+
 const debugEl = document.getElementById("debug");
 function debug(msg) {
   if (debugEl) debugEl.textContent = msg;
