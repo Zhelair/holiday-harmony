@@ -159,12 +159,29 @@
       border-radius:999px;
       overflow:hidden;
       height:14px;
+      position: relative;
     }
     .vibeBar{
       height:100%;
       width:0%;
-      transition: width .35s ease;
+      transition: width .45s ease;
       background: linear-gradient(90deg, #ffe7b3, #fff2d6);
+      background-size: 200% 100%;
+      animation: vibeFlow 6s linear infinite;
+    }
+    @keyframes vibeFlow{
+      from { background-position: 0% 0%; }
+      to   { background-position: 200% 0%; }
+    }
+
+    /* pulse animation when vibe changes */
+    .vibePulse{
+      animation: vibePulse 700ms ease;
+    }
+    @keyframes vibePulse{
+      0%   { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
+      30%  { box-shadow: 0 0 26px rgba(0,0,0,.10); transform: scale(1.01); }
+      100% { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
     }
 
     /* ---- Memory feed grid ---- */
@@ -208,68 +225,71 @@
       cursor:pointer;
       width:auto;
       margin:0;
+      transition: transform .10s ease;
     }
+    .reactBtn:active{ transform: scale(1.05); }
   </style>
 </head>
 
 <body>
   <div class="top">
-    <h1>🏠 Room: <span id="roomLabel"></span></h1>
+    <h1 id="roomTitle">🏠 Room: <span id="roomLabel"></span></h1>
 
     <div class="pill" id="shareLink"></div>
 
     <div class="pill">
-      🔊 Sound
+      <span id="soundLabel">🔊 Sound</span>
       <input id="soundToggle" type="checkbox" checked>
       <button id="partyBtn" type="button">🎉 Party</button>
+      <button id="langBtn" type="button">EN / RU</button>
     </div>
   </div>
 
   <div class="pill" id="debug">Booting…</div>
 
   <div class="card">
-    <h2 style="margin:0;">Holiday Harmony</h2>
-    <small>Co-op family mini-game: collect good moments, keep the vibe warm.</small>
+    <h2 id="appTitle" style="margin:0;">Holiday Harmony</h2>
+    <small id="appSubtitle">Co-op family mini-game: collect good moments, keep the vibe warm.</small>
   </div>
 
   <div class="card">
-    <h3>🎯 Today’s Mission</h3>
-    <div id="missionOut" class="tipBox">Loading mission…</div>
+    <h3 id="missionTitle">🎯 Today’s Gentle Challenge</h3>
+    <div id="missionOut" class="tipBox">Loading…</div>
     <div class="miniRow" style="margin-top:10px;">
       <button id="missionDoneBtn" type="button">✅ I did it</button>
-      <button id="missionNewBtn" type="button">🎲 New mission (just for me)</button>
+      <button id="missionNewBtn" type="button">🎲 New (just for me)</button>
     </div>
-    <small>Shared daily mission + personal reroll option.</small>
+    <small id="missionHint">Shared daily challenge + personal reroll option.</small>
   </div>
 
   <div class="card">
-    <h3>📊 Family Dashboard</h3>
-    <div id="happinessLevel">Loading family vibes…</div>
+    <h3 id="dashTitle">📊 Family Dashboard</h3>
+    <div id="happinessLevel">Loading…</div>
 
     <div class="kpiRow">
-      <div class="kpi"><b id="kpiMemories">—</b><small>Happy moments today</small></div>
-      <div class="kpi"><b id="kpiCheckins">—</b><small>Mood check-ins today</small></div>
-      <div class="kpi"><b id="kpiMood">—</b><small>Today’s vibe</small></div>
-      <div class="kpi"><b id="kpiReacts">—</b><small>Reactions today</small></div>
+      <div class="kpi"><b id="kpiMemories">—</b><small id="kpiMemoriesLabel">Happy moments today</small></div>
+      <div class="kpi"><b id="kpiCheckins">—</b><small id="kpiCheckinsLabel">Mood check-ins today</small></div>
+      <div class="kpi"><b id="kpiMood">—</b><small id="kpiMoodLabel">Today’s vibe</small></div>
+      <div class="kpi"><b id="kpiReacts">—</b><small id="kpiReactsLabel">Reactions today</small></div>
     </div>
 
-    <div class="vibeWrap" title="Family vibe meter">
+    <div id="vibeWrap" class="vibeWrap" title="Family vibe meter">
       <div id="vibeBar" class="vibeBar"></div>
     </div>
 
-    <div style="margin-top:10px;" class="tipBox" id="recapOut">Loading recap…</div>
+    <div style="margin-top:10px;" class="tipBox" id="recapOut">Loading…</div>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>✅ Daily Mood Check-in</h3>
+      <h3 id="checkinTitle">✅ Daily Mood Check-in</h3>
       <input id="name" placeholder="Your name" />
-      <small>Pick your mood for today (you can change it later).</small>
+      <small id="checkinHint">Pick your mood for today (you can change it later).</small>
 
       <div class="moodRow">
-        <button class="moodBtn" id="moodGood" type="button"><span>😇</span> Calm</button>
-        <button class="moodBtn" id="moodOk" type="button"><span>😐</span> Okay</button>
-        <button class="moodBtn" id="moodBad" type="button"><span>😤</span> Overloaded</button>
+        <button class="moodBtn" id="moodGood" type="button"><span>😇</span><span id="moodGoodLabel">Calm</span></button>
+        <button class="moodBtn" id="moodOk" type="button"><span>😐</span><span id="moodOkLabel">Okay</span></button>
+        <button class="moodBtn" id="moodBad" type="button"><span>😤</span><span id="moodBadLabel">Overloaded</span></button>
       </div>
 
       <small id="moodStatus"></small>
@@ -283,49 +303,50 @@
     </div>
 
     <div class="card">
-      <h3>🏆 Awards Preview</h3>
+      <h3 id="awardsTitle">🏆 Awards Preview</h3>
       <div id="awardsOut">Loading…</div>
-      <small>Friendly awards only. No roasting. 😄</small>
+      <small id="awardsHint">Friendly awards only. No roasting. 😄</small>
     </div>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>🎲 Activity Generator</h3>
+      <h3 id="activityTitle">🎲 Activity Generator</h3>
       <button id="activityBtn" type="button">Give us something fun</button>
       <div id="activityOut"></div>
-      <small>Instant “what do we do now?” rescue button.</small>
+      <small id="activityHint">Instant “what do we do now?” rescue button.</small>
     </div>
 
     <div class="card">
-      <h3>🧾 Today’s Mood Board</h3>
+      <h3 id="boardTitle">🧾 Today’s Mood Board</h3>
       <div id="moodBoard">Loading…</div>
-      <small>Shows who checked in today.</small>
+      <small id="boardHint">Shows who checked in today.</small>
     </div>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>✨ Memory Vault</h3>
+      <h3 id="vaultTitle">✨ Memory Vault</h3>
       <textarea id="moment" rows="3" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
       <button id="postBtn" type="button">Post memory</button>
       <small id="status"></small>
       <div class="tipBox" style="margin-top:10px;">
-        <b>Reactions:</b> Tap ❤️ 😂 ⭐ on any memory (tap again to undo).
+        <b id="reactionsLabel">Reactions:</b>
+        <span id="reactionsHint">Tap ❤️ 😂 ⭐ on any memory (tap again to undo).</span>
       </div>
     </div>
 
     <div class="card">
-      <h3>📌 Quick Tips</h3>
+      <h3 id="tipsTitle">📌 Quick Tips</h3>
       <button id="newTipBtn" type="button">Give me a tip</button>
-      <div id="tipsOut" class="tipBox">Loading tips…</div>
-      <small>Short prompts to keep the vibe warm.</small>
+      <div id="tipsOut" class="tipBox">Loading…</div>
+      <small id="tipsHint">Short prompts to keep the vibe warm.</small>
     </div>
   </div>
 
   <div id="list" class="memoryGrid"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=100"></script>
+  <script src="app.js?v=200"></script>
 </body>
 </html>
