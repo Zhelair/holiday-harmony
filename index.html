@@ -13,7 +13,12 @@
     body{
       font-family:system-ui,Arial; max-width:860px; margin:28px auto; padding:0 14px;
       color:var(--text);
-      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      background:
+        linear-gradient(180deg, rgba(246,247,255,.88), rgba(255,255,255,.95)),
+        url("assets/img/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
     }
     h1{margin:0 0 6px 0}
     .card{
@@ -61,7 +66,6 @@
   </div>
 
   <script>
-    // Load saved name/role
     const savedName = localStorage.getItem("hh_name") || "";
     const savedRole = localStorage.getItem("hh_role") || "";
     document.getElementById("yourName").value = savedName;
@@ -74,7 +78,6 @@
 
       if(!code){ alert("Please enter a room code."); return; }
 
-      // Save for next time
       if (name) localStorage.setItem("hh_name", name);
       if (role) localStorage.setItem("hh_role", role);
 
