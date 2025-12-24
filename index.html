@@ -55,14 +55,14 @@
         <option>Guest</option>
       </select>
     </div>
-    <button id="goBtn">Go to room</button>
+    <button id="goBtn" type="button">Go to room</button>
     <small>Tip: share the room link. Everyone uses the same room code.</small>
   </div>
 
   <div class="card">
     <h3>Join</h3>
     <input id="joinCode" placeholder="Enter room code (e.g. xmas2025)" />
-    <button id="joinBtn">Join</button>
+    <button id="joinBtn" type="button">Join</button>
   </div>
 
   <script>
@@ -94,6 +94,14 @@
 
     document.getElementById("joinBtn").addEventListener("click", () => {
       goToRoom(document.getElementById("joinCode").value);
+    });
+
+    // Phone-friendly: allow Enter to join
+    document.getElementById("roomCode").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") goToRoom(document.getElementById("roomCode").value);
+    });
+    document.getElementById("joinCode").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") goToRoom(document.getElementById("joinCode").value);
     });
   </script>
 </body>
