@@ -1,10 +1,11 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+// ✅ Supabase loaded via script tag in room.html
+// window.supabase is available
 
 // ✅ Paste your Supabase URL + anon key here:
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
 // ---- URL params
 const params = new URLSearchParams(location.search);
@@ -49,7 +50,7 @@ if (!room) {
 
 roomLabel.textContent = room;
 
-// Share link (safe)
+// Share link
 const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
 const fullLink = `${base}room.html?room=${encodeURIComponent(room)}`;
 shareLink.textContent = `Share: ${fullLink}`;
@@ -122,7 +123,7 @@ document.getElementById("activityBtn")?.addEventListener("click", () => {
     `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
-// ---- Reset Moment (friendly, not insulting)
+// ---- Reset Moment (friendly)
 const defuseLines = [
   "Reset moment: 3 slow breaths. Then we continue with softer voices. 🙂",
   "Quick pause: water + a small smile. Team ‘family’ is back online.",
@@ -146,7 +147,7 @@ defuseBtn?.addEventListener("click", () => {
     </div>`;
 });
 
-// ---- Chore roulette (friendly)
+// ---- Chore roulette
 const chores = [
   "You wash dishes 🫧",
   "You dry dishes 🍽️",
@@ -168,7 +169,7 @@ choreBtn?.addEventListener("click", () => {
     </div>`;
 });
 
-// ---- Mood Check-in (Supabase)
+// ---- Mood check-in
 const moodButtons = {
   good: document.getElementById("moodGood"),
   ok: document.getElementById("moodOk"),
@@ -191,7 +192,7 @@ async function setMood(mood) {
 
   const checkin_date = todayISODate();
 
-  const { error } = await supabase
+  const { error } = await supa
     .from("checkins")
     .upsert([{ room_code: room, name, checkin_date, mood }],
       { onConflict: "room_code,name,checkin_date" });
@@ -227,7 +228,7 @@ async function loadMyMoodSelection(checkinsToday) {
   if (mine.mood === "bad") moodButtons.bad?.classList.add("moodSelected");
 }
 
-// ---- Private memories (local only)
+// ---- Private memories
 function privateKey() {
   return `hh_private_${room}_${todayISODate()}`;
 }
@@ -285,7 +286,7 @@ async function postMemory() {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await supa
     .from("memories")
     .insert([{ room_code: room, name, moment }]);
 
@@ -339,7 +340,7 @@ function updateDashboard(memoriesTodayCount, checkinsToday) {
   }
   if (counts.bad >= 2 && checkinsToday.length >= 3) {
     label = "🧯 Gentle reset";
-    note = "A short break can save the whole evening: tea, walk, music, or a quick activity.";
+    note = "A short break can save the evening: tea, walk, music, or a quick activity.";
   }
 
   el.innerHTML = `
@@ -400,19 +401,16 @@ function updateAwards(memories, checkinsToday) {
   if (needsCare) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(needsCare)} (self-reported, totally normal)`);
   if (randName) awards.push(`🎁 <b>Bonus Warmth</b>: ${escapeHtml(randName)}`);
 
-  if (awards.length === 0) {
-    awardsOut.innerHTML = `<small>No awards yet. Add a memory or a mood check-in.</small>`;
-    return;
-  }
-
   awardsOut.innerHTML = `
     <div style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-      ${awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("")}
+      ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : "<small>No awards yet.</small>"}
     </div>`;
 }
 
-// ---- Quick Tips (smarter + “Give me a tip” button)
+// ---- Quick Tips (always works)
 let lastTipsPool = [];
+let lastMemoriesTodayCount = 0;
+let lastCheckinsToday = [];
 
 function pickRandom(arr, count = 3) {
   const copy = [...arr];
@@ -424,12 +422,11 @@ function pickRandom(arr, count = 3) {
 }
 
 function renderTips(tips) {
-  tipsOut.innerHTML = `
-    ${tips.map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("")}
-  `;
+  if (!tipsOut) return;
+  tipsOut.innerHTML = tips.map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
 }
 
-function updateTips(memoriesTodayCount, checkinsToday) {
+function buildTipsPool(memoriesTodayCount, checkinsToday) {
   const { counts } = summarizeMood(checkinsToday);
   const tips = [];
 
@@ -444,7 +441,7 @@ function updateTips(memoriesTodayCount, checkinsToday) {
     tips.push("🎧 Soft music for 10 minutes changes the whole room (quiet magic).");
   }
 
-  tips.push("🫶 Compliment round at dinner: one sincere sentence each. Keep it simple.");
+  tips.push("🫶 Compliment round at dinner: one sincere sentence each.");
   tips.push("🎬 Movie decision hack: everyone suggests 1 title, then vote.");
   tips.push("🧹 A 5-minute tidy sprint with music = fast mood reset.");
   tips.push("🍵 Tea break rule: no problem-solving during tea. Just warm vibes.");
@@ -452,29 +449,41 @@ function updateTips(memoriesTodayCount, checkinsToday) {
   tips.push("👂 ‘Curious question’ rule: ask 1 question before giving advice.");
   tips.push("😂 Tell a family story: ‘Remember when…’ is the best glue.");
 
-  lastTipsPool = tips;
-  renderTips(pickRandom(tips, 3));
+  return tips;
+}
+
+function updateTips(memoriesTodayCount, checkinsToday) {
+  lastMemoriesTodayCount = memoriesTodayCount;
+  lastCheckinsToday = checkinsToday;
+
+  lastTipsPool = buildTipsPool(memoriesTodayCount, checkinsToday);
+  renderTips(pickRandom(lastTipsPool, 3));
 }
 
 newTipBtn?.addEventListener("click", () => {
   playSound("tap");
-  if (!lastTipsPool.length) return;
+  if (!lastTipsPool.length) {
+    lastTipsPool = buildTipsPool(lastMemoriesTodayCount, lastCheckinsToday);
+  }
   renderTips(pickRandom(lastTipsPool, 3));
 });
+
+// ---- Stop blinking: only re-render memories if changed
+let lastMemoriesRenderKey = "";
 
 // ---- Load all
 async function loadAll() {
   const today = todayISODate();
 
   const [memRes, chkRes] = await Promise.all([
-    supabase
+    supa
       .from("memories")
       .select("*")
       .eq("room_code", room)
       .order("created_at", { ascending: false })
       .limit(80),
 
-    supabase
+    supa
       .from("checkins")
       .select("*")
       .eq("room_code", room)
@@ -498,14 +507,19 @@ async function loadAll() {
   loadMyMoodSelection(checkinsToday);
   renderPrivateMemories();
 
-  listEl.innerHTML = memories.map(m => `
-    <div class="card">
-      <b>${escapeHtml(m.name)}</b>
-      <small> — ${new Date(m.created_at).toLocaleString()}</small>
-      <div>${escapeHtml(m.moment)}</div>
-    </div>
-  `).join("");
+  const renderKey = memories.map(m => `${m.created_at}|${m.name}|${m.moment}`).join("||");
+  if (renderKey !== lastMemoriesRenderKey) {
+    lastMemoriesRenderKey = renderKey;
+
+    listEl.innerHTML = memories.map(m => `
+      <div class="card">
+        <b>${escapeHtml(m.name)}</b>
+        <small> — ${new Date(m.created_at).toLocaleString()}</small>
+        <div>${escapeHtml(m.moment)}</div>
+      </div>
+    `).join("");
+  }
 }
 
-setInterval(loadAll, 4000);
+setInterval(loadAll, 5000);
 loadAll();
