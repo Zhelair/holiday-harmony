@@ -16,7 +16,12 @@
       margin: 22px auto;
       padding: 0 14px;
       color: var(--text);
-      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      background:
+        linear-gradient(180deg, rgba(246,247,255,.88), rgba(255,255,255,.95)),
+        url("assets/img/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
     }
     .top{
       display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 6px;
@@ -68,6 +73,10 @@
 
     .checkRow{ display:flex; align-items:center; gap:10px; margin-top:6px; }
     .checkRow input{ width:auto; margin:0; }
+
+    .tipBox{
+      border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;
+    }
   </style>
 </head>
 <body>
@@ -111,7 +120,7 @@
     <div class="card">
       <h3>🏆 Awards Preview</h3>
       <div id="awardsOut">Loading…</div>
-      <small>Based on today’s activity. Friendly awards only — no roasting. 🙂</small>
+      <small>Based on today’s activity — friendly awards only. 🙂</small>
     </div>
   </div>
 
@@ -147,7 +156,8 @@
 
     <div class="card">
       <h3>📌 Quick Tips</h3>
-      <div id="tipsOut"></div>
+      <button id="newTipBtn" type="button">Give me a tip</button>
+      <div id="tipsOut" class="tipBox"></div>
       <small>Short, gentle prompts to keep the vibe warm.</small>
     </div>
   </div>
