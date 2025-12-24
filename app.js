@@ -9,16 +9,15 @@ function debug(msg) {
 }
 
 if (!window.supabase || !window.supabase.createClient) {
-  debug("❌ Supabase library not loaded (CDN blocked?).");
+  debug("❌ Supabase library not loaded.");
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ PASTE REAL VALUES (KEEP QUOTES!)
+// ✅ PASTE REAL VALUES
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
-debug("✅ JS running. Connecting…");
 
 // ---- URL params
 const params = new URLSearchParams(location.search);
@@ -30,7 +29,11 @@ if (!room) {
 
 // ---- DOM
 document.getElementById("roomLabel").textContent = room;
+
 const shareLink = document.getElementById("shareLink");
+const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
+shareLink.textContent = `Share: ${base}room.html?room=${encodeURIComponent(room)}`;
+
 const nameEl = document.getElementById("name");
 const momentEl = document.getElementById("moment");
 const statusEl = document.getElementById("status");
@@ -56,16 +59,13 @@ const newTipBtn = document.getElementById("newTipBtn");
 const soundToggle = document.getElementById("soundToggle");
 const partyBtn = document.getElementById("partyBtn");
 
-// Mission DOM
 const missionOut = document.getElementById("missionOut");
 const missionDoneBtn = document.getElementById("missionDoneBtn");
 const missionNewBtn = document.getElementById("missionNewBtn");
 
-// Share link
-const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
-shareLink.textContent = `Share: ${base}room.html?room=${encodeURIComponent(room)}`;
+const vibeBarEl = document.getElementById("vibeBar");
 
-// ---- Helpers
+// ---- helpers
 function escapeHtml(str) {
   return (str || "").replace(/[&<>"']/g, s => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
@@ -88,7 +88,7 @@ function tryPlayAudio(src, opts = {}) {
   if (!soundOn()) return null;
   try {
     const a = new Audio(src);
-    a.addEventListener("error", () => {}); // ignore missing file
+    a.addEventListener("error", () => {});
     if (opts.loop) a.loop = true;
     if (typeof opts.volume === "number") a.volume = opts.volume;
     a.play().catch(() => {});
@@ -104,17 +104,17 @@ function playSound(which) {
   };
   const src = map[which];
   if (!src) return;
-  tryPlayAudio(src);
+  tryPlayAudio(src, { volume: 0.9 });
 }
 
-// ---- Party button = ambience toggle (ambience.mp3)
+// ---- ambience (LOUD)
 let ambienceAudio = null;
 partyBtn?.addEventListener("click", () => {
   playSound("tap");
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.22;
+    ambienceAudio.volume = 0.80; // LOUDER
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -125,20 +125,9 @@ soundToggle?.addEventListener("change", () => {
   if (!soundOn() && ambienceAudio) ambienceAudio.pause();
 });
 
-// ---- Remember name
+// ---- remember name
 function getSavedName() { return localStorage.getItem("hh_name") || ""; }
 function setSavedName(v) { if (v) localStorage.setItem("hh_name", v); }
-
-// Device id (for reactions)
-function ensureDeviceId() {
-  let id = localStorage.getItem("hh_device_id");
-  if (!id) {
-    id = (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now());
-    localStorage.setItem("hh_device_id", id);
-  }
-  return id;
-}
-const DEVICE_ID = ensureDeviceId();
 
 (function initIdentity(){
   const n = getSavedName();
@@ -149,8 +138,19 @@ nameEl?.addEventListener("input", () => {
   if (name) setSavedName(name);
 });
 
+// ---- device id (for reactions)
+function ensureDeviceId() {
+  let id = localStorage.getItem("hh_device_id");
+  if (!id) {
+    id = (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now());
+    localStorage.setItem("hh_device_id", id);
+  }
+  return id;
+}
+const DEVICE_ID = ensureDeviceId();
+
 // ==========================
-// NEW: Today’s Mission (no DB)
+// Today’s Mission (no DB)
 // ==========================
 const missionPool = [
   "Say one sincere compliment to someone today.",
@@ -159,7 +159,7 @@ const missionPool = [
   "Ask someone: ‘What was the best part of your day?’",
   "Do one small helpful thing without announcing it 😄",
   "Take a 10-minute walk together (no heavy topics).",
-  "Everyone shares one funny memory from childhood.",
+  "Everyone shares one funny childhood memory.",
   "Kitchen teamwork: make one thing together.",
   "Photo moment: take a goofy group selfie.",
   "Movie vote: everyone suggests 1 title, then vote."
@@ -171,48 +171,31 @@ function hashStringToInt(str) {
   return h;
 }
 
-function missionKeyBase() {
-  return `hh_mission_${room}_${todayISODate()}`;
-}
-
-function myMissionOverrideKey() {
-  // local override per device per day (so “New mission” is personal)
-  return `${missionKeyBase()}_override_${DEVICE_ID}`;
-}
-
+function missionKeyBase() { return `hh_mission_${room}_${todayISODate()}`; }
+function myMissionOverrideKey() { return `${missionKeyBase()}_override_${DEVICE_ID}`; }
 function missionDoneKey() {
   const name = ((nameEl?.value || getSavedName()) || "anon").trim().toLowerCase();
   return `${missionKeyBase()}_done_${name}_${DEVICE_ID}`;
 }
 
 function getTodaysMissionIndex() {
-  // deterministic per room+date, so everyone sees same “default”
   const baseSeed = `${room}|${todayISODate()}`;
-  const idx = hashStringToInt(baseSeed) % missionPool.length;
-  return idx;
+  return hashStringToInt(baseSeed) % missionPool.length;
 }
 
 function renderMission() {
   const override = localStorage.getItem(myMissionOverrideKey());
   const idx = override ? Number(override) : getTodaysMissionIndex();
   const mission = missionPool[(Number.isFinite(idx) ? idx : 0) % missionPool.length];
-
   const done = localStorage.getItem(missionDoneKey()) === "1";
 
-  missionOut.innerHTML = `
-    <b>Today:</b> ${escapeHtml(mission)}<br>
-    <small>${done ? "✅ You marked it done." : "Not marked done yet."}</small>
-  `;
+  missionOut.innerHTML = `<b>Today:</b> ${escapeHtml(mission)}<br><small>${done ? "✅ You marked it done." : "Not marked done yet."}</small>`;
 }
 
 missionDoneBtn?.addEventListener("click", () => {
   playSound("tap");
-  // require a name so “done” is per person
   const name = (nameEl.value || "").trim();
-  if (!name) {
-    alert("Please enter your name first 🙂");
-    return;
-  }
+  if (!name) return alert("Please enter your name first 🙂");
   localStorage.setItem(missionDoneKey(), "1");
   renderMission();
   playSound("success");
@@ -220,9 +203,7 @@ missionDoneBtn?.addEventListener("click", () => {
 
 missionNewBtn?.addEventListener("click", () => {
   playSound("tap");
-  // personal re-roll only
-  const idx = Math.floor(Math.random() * missionPool.length);
-  localStorage.setItem(myMissionOverrideKey(), String(idx));
+  localStorage.setItem(myMissionOverrideKey(), String(Math.floor(Math.random() * missionPool.length)));
   renderMission();
   playSound("success");
 });
@@ -248,16 +229,15 @@ const activities = [
 document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
   const pick = activities[Math.floor(Math.random() * activities.length)];
-  document.getElementById("activityOut").innerHTML =
-    `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
+  document.getElementById("activityOut").innerHTML = `<div style="margin-top:10px"><b>${escapeHtml(pick)}</b></div>`;
 });
 
 const defuseLines = [
-  "Reset moment: 3 slow breaths. Then we continue with softer voices. 🙂",
+  "Reset moment: 3 slow breaths. Then softer voices. 🙂",
   "Quick pause: water + a small smile. Team ‘family’ is back online.",
   "Switch scene: tea, a short walk, or a cozy activity. Keep it light for 10 minutes.",
-  "Compliment round: each person says one nice thing. Short and real.",
-  "Humor mode: say your complaint like a Disney villain. Everyone laughs, problem shrinks.",
+  "Compliment round: one sincere sentence each.",
+  "Humor mode: say your complaint like a Disney villain.",
   "Peace offering: bring a snack. Snacks solve many mysteries.",
   "Kind first, correct later. Works weirdly well."
 ];
@@ -349,29 +329,55 @@ function loadMyMoodSelection(checkinsToday) {
 }
 
 // ==========================
-// Reactions (fixed counting)
+// Reactions (toggle + count)
 // ==========================
-async function addReaction(memoryId, emoji) {
+async function toggleReaction(memoryId, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
   if (!memoryId) return;
-
   playSound("tap");
 
-  const { error } = await supa
+  // Check if this device already reacted with this emoji on this memory
+  const { data: existing, error: selErr } = await supa
     .from("reactions")
-    .insert([{ room_code: room, memory_id: memoryId, emoji, name, device_id: DEVICE_ID }]);
+    .select("id")
+    .eq("room_code", room)
+    .eq("memory_id", memoryId)
+    .eq("emoji", emoji)
+    .eq("device_id", DEVICE_ID)
+    .limit(1);
 
-  // If duplicate (same device already reacted with same emoji), ignore.
-  if (error && !String(error.message || "").toLowerCase().includes("duplicate")) {
-    debug("Reaction error: " + error.message);
+  if (selErr) { debug("Reaction select error: " + selErr.message); return; }
+
+  if (existing && existing.length) {
+    const { error: delErr } = await supa
+      .from("reactions")
+      .delete()
+      .eq("id", existing[0].id);
+
+    if (delErr) { debug("Reaction delete error: " + delErr.message); return; }
+  } else {
+    const { error: insErr } = await supa
+      .from("reactions")
+      .insert([{ room_code: room, memory_id: memoryId, emoji, name, device_id: DEVICE_ID }]);
+
+    if (insErr) { debug("Reaction insert error: " + insErr.message); return; }
   }
 
-  await loadAll();
   playSound("success");
+  await loadAll();
 }
 
+// Event delegation: works even after re-render
+listEl?.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".reactBtn");
+  if (!btn) return;
+  const mid = btn.getAttribute("data-mid");
+  const emo = btn.getAttribute("data-emo");
+  await toggleReaction(mid, emo);
+});
+
 // ==========================
-// Tips / Dashboard
+// Dashboard + vibe bar
 // ==========================
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
@@ -383,6 +389,20 @@ function summarizeMood(checkinsToday) {
     else vibe = "😐 Okay";
   }
   return { counts, vibe };
+}
+
+function setVibeBar(percent, vibeText) {
+  if (!vibeBarEl) return;
+  const p = Math.max(0, Math.min(100, percent));
+  vibeBarEl.style.width = p + "%";
+
+  if (String(vibeText).includes("Overloaded")) {
+    vibeBarEl.style.background = "linear-gradient(90deg, #ffb3b3, #ffd1d1)";
+  } else if (String(vibeText).includes("Calm")) {
+    vibeBarEl.style.background = "linear-gradient(90deg, #b8f0d0, #d6ffe9)";
+  } else {
+    vibeBarEl.style.background = "linear-gradient(90deg, #ffe7b3, #fff2d6)";
+  }
 }
 
 function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount) {
@@ -397,18 +417,22 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
 
   let label = "🙂 Cozy start";
   let note = "Post one happy moment (even a tiny one).";
-
   if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) { label = "🙂 Good vibes"; note = "Nice. The warm timeline is growing."; }
   if (memoriesTodayCount >= 4 && counts.bad === 0) { label = "😄 Great day together"; note = "Food, laughs, and a little rest. Perfect."; }
   if (counts.bad >= 2 && checkinsToday.length >= 3) { label = "🧯 Gentle reset"; note = "Tea/walk mode can save the evening."; }
 
   el.innerHTML = `<b>${label}</b><br><small>${escapeHtml(note)}</small>`;
 
+  const badCount = (checkinsToday || []).filter(c => c.mood === "bad").length;
+  const scoreRaw = (memoriesTodayCount * 12) + (reactionsTodayCount * 3) + (checkinsToday.length * 8) - (badCount * 12);
+  const score = Math.max(0, Math.min(100, scoreRaw));
+  setVibeBar(score, vibe);
+
   recapOut.innerHTML = `
     <b>Today recap:</b><br>
-    • Memories: <b>${memoriesTodayCount}</b> &nbsp; • Reactions: <b>${reactionsTodayCount}</b><br>
+    • Memories: <b>${memoriesTodayCount}</b> • Reactions: <b>${reactionsTodayCount}</b><br>
     • Check-ins: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
-    <small>More reactions = more smiles. Very scientific. 😄</small>
+    <small>Vibe meter is… surprisingly accurate 😄</small>
   `;
 }
 
@@ -451,7 +475,7 @@ function updateAwards(memories, checkinsToday, reactionsByMemory) {
   if (mostMemories) awards.push(`✨ <b>Memory Maker</b>: ${escapeHtml(mostMemories.name)} (${mostMemories.val} posts)`);
   if (moodNames.good?.[0]) awards.push(`🕊 <b>Calm Star</b>: ${escapeHtml(moodNames.good[0])}`);
   if (moodNames.ok?.[0]) awards.push(`🙂 <b>Steady Support</b>: ${escapeHtml(moodNames.ok[0])}`);
-  if (moodNames.bad?.[0]) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(moodNames.bad[0])} (self-reported, totally normal)`);
+  if (moodNames.bad?.[0]) awards.push(`🫶 <b>Needs a Hug</b>: ${escapeHtml(moodNames.bad[0])}`);
   if (topMemory && topMemory.cnt > 0) awards.push(`⭐ <b>Most Loved Moment</b>: ${escapeHtml(topMemory.name)} (${topMemory.cnt} reactions)`);
 
   awardsOut.innerHTML = `
@@ -461,12 +485,8 @@ function updateAwards(memories, checkinsToday, reactionsByMemory) {
 }
 
 // ==========================
-// Quick tips
+// Tips
 // ==========================
-let lastTipsPool = [];
-let lastMemoriesTodayCount = 0;
-let lastCheckinsToday = [];
-
 function pickRandom(arr, count = 3) {
   const copy = [...arr];
   const out = [];
@@ -477,7 +497,6 @@ function pickRandom(arr, count = 3) {
 function buildTipsPool(memoriesTodayCount, checkinsToday) {
   const { counts } = summarizeMood(checkinsToday);
   const tips = [];
-
   if (checkinsToday.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
   if (memoriesTodayCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
   if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
@@ -489,25 +508,14 @@ function buildTipsPool(memoriesTodayCount, checkinsToday) {
   tips.push("🎲 Use Activity Generator when conversation gets stuck.");
   tips.push("😂 ‘Remember when…’ story time is the best glue.");
   tips.push("⭐ React to memories — it boosts the vibe fast.");
-
   return tips;
 }
 
-function renderTips(tips) {
-  tipsOut.innerHTML = tips.map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
-}
-
-function updateTips(memoriesTodayCount, checkinsToday) {
-  lastMemoriesTodayCount = memoriesTodayCount;
-  lastCheckinsToday = checkinsToday;
-  lastTipsPool = buildTipsPool(memoriesTodayCount, checkinsToday);
-  renderTips(pickRandom(lastTipsPool, 3));
-}
-
+let lastTipsPool = [];
 newTipBtn?.addEventListener("click", () => {
   playSound("tap");
-  if (!lastTipsPool.length) lastTipsPool = buildTipsPool(lastMemoriesTodayCount, lastCheckinsToday);
-  renderTips(pickRandom(lastTipsPool, 3));
+  if (!lastTipsPool.length) return;
+  tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
 });
 
 // ==========================
@@ -539,9 +547,9 @@ async function postMemory() {
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
 
 // ==========================
-// Main load (no blinking)
+// Load + render
 // ==========================
-let lastMemoriesRenderKey = "";
+let lastRenderKey = "";
 
 async function loadAll() {
   try {
@@ -551,7 +559,7 @@ async function loadAll() {
     const [memRes, chkRes, reactRes] = await Promise.all([
       supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
       supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
-      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(500),
+      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
     ]);
 
     if (memRes.error) throw memRes.error;
@@ -580,21 +588,27 @@ async function loadAll() {
     updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount);
     updateMoodBoard(checkinsToday);
     updateAwards(memories, checkinsToday, reactionsByMemory);
-    updateTips(memoriesTodayCount, checkinsToday);
-    loadMyMoodSelection(checkinsToday);
 
+    lastTipsPool = buildTipsPool(memoriesTodayCount, checkinsToday);
+    if (tipsOut && tipsOut.textContent.includes("Loading")) {
+      tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(t => `<div style="margin:10px 0;">${escapeHtml(t)}</div>`).join("");
+    }
+
+    loadMyMoodSelection(checkinsToday);
     renderMission();
 
-    // Render memories only when changed (prevents flashing)
-    const renderKey = memories.map(m => `${m.id}|${m.created_at}|${m.name}|${m.moment}|${reactionsByMemory[m.id]?.total || 0}`).join("||");
+    // Render memories only when changed (prevents blinking)
+    const renderKey = memories
+      .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[m.id]?.total || 0}`)
+      .join("||");
 
-    if (renderKey !== lastMemoriesRenderKey) {
-      lastMemoriesRenderKey = renderKey;
+    if (renderKey !== lastRenderKey) {
+      lastRenderKey = renderKey;
 
       listEl.innerHTML = memories.map(m => {
         const rx = reactionsByMemory[m.id] || { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
         return `
-          <div class="card">
+          <div class="memoryCard">
             <b>${escapeHtml(m.name)}</b>
             <small> — ${new Date(m.created_at).toLocaleString()}</small>
             <div style="margin-top:6px;">${escapeHtml(m.moment)}</div>
@@ -607,14 +621,6 @@ async function loadAll() {
           </div>
         `;
       }).join("");
-
-      document.querySelectorAll(".reactBtn").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const mid = btn.getAttribute("data-mid");
-          const emo = btn.getAttribute("data-emo");
-          await addReaction(mid, emo);
-        });
-      });
     }
 
     debug("✅ Connected. Data loaded.");
