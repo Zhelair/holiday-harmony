@@ -124,7 +124,7 @@ function isSameLocalDay(isoOrTs) {
 function fmtLocal(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
-function msToMmSs(ms) {
+function (ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const mm = String(Math.floor(s / 60)).padStart(2,"0");
   const ss = String(s % 60)).padStart(2,"0");
@@ -132,7 +132,7 @@ function msToMmSs(ms) {
 }
 
 // --- Fix small typo if any browser chokes:
-function msToMmSsSafe(ms){
+function msToMmSs(ms){
   const s = Math.max(0, Math.floor(ms / 1000));
   const mm = String(Math.floor(s / 60)).padStart(2,"0");
   const ss = String(s % 60).padStart(2,"0");
@@ -922,7 +922,7 @@ function renderPauseBanner(latestPauseSignal) {
   pauseBanner.innerHTML = `
     <b>${escapeHtml(t("pauseBannerTitle"))}</b><br>
     ${escapeHtml(t("pauseBannerText"))}<br>
-    <small>${escapeHtml(t("pauseRemaining"))}: <b>${escapeHtml(msToMmSsSafe(remaining))}</b></small>
+    <small>${escapeHtml(t("pauseRemaining"))}: <b>${escapeHtml(msToMmSs(remaining))}</b></small>
   `;
 }
 
