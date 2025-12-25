@@ -273,28 +273,75 @@ const DEVICE_ID = ensureDeviceId();
 // ==========================
 const i18n = {
   en: {
+    // top / global
     soundLabel:"🔊 Sound",
-    motdTitle:"⭐ Memory of the Day",
-    motdHint:"Most loved memory today (by reactions).",
+    partyBtn:"🎉 Party",
     recapBtn:"📸 Recap",
+    exportBtn:"🧾 Export",
+    langBtn:"EN / RU",
+
+    dateToday:"Today",
+    dateYday:"Yesterday",
+    date7:"Last 7",
+    date30:"Last 30",
+
+    appTitle:"Holiday Harmony",
+    appSubtitle:"Co-op family mini-game: collect good moments, keep the vibe warm.",
+
+    // cards
+    motdTitle:"⭐ Memory of the Day",
+    motdHint:"Most loved memory (by reactions).",
+
+    missionTitle:"🎯 Today’s Gentle Challenge",
+    missionDone:"✅ I did it",
+    missionNew:"🎲 New (just for me)",
+    missionHint:"Shared daily challenge + personal reroll option.",
+
+    dashTitle:"📊 Family Dashboard",
+    kpiMemoriesLabel:"Happy moments",
+    kpiCheckinsLabel:"Mood check-ins",
+    kpiMoodLabel:"Family vibe",
+    kpiReactsLabel:"Reactions",
+
+    checkinTitle:"✅ Daily Mood Check-in",
+    namePh:"Your name",
+    checkinHint:"Pick your mood for today (you can change it later).",
+    moodCalm:"Calm",
+    moodOk:"Okay",
+    moodOver:"Overloaded",
+    pauseBtn:"🧘 I need a pause",
+    defuseBtn:"🧯 Reset Moment",
+    choreBtn:"🎡 Chore Roulette",
+    activityBtn:"🎲 Activity",
+
+    awardsTitle:"🏆 Awards Preview",
+    awardsHint:"Friendly awards only. No roasting. 😄",
+
+    vaultTitle:"✨ Memory Vault",
+    post:"Post memory",
+    momentPh:"Happy moment (e.g. We laughed together at breakfast)",
+    reactionsLabel:"Reactions:",
+    reactionsHint:"Tap ❤️ 😂 ⭐ on any memory (tap again to undo).",
+
+    bingoTitle:"🎯 Family Bingo",
+    bingoHint:"Tap squares as they happen. It’s a co-op board 🙂",
+
+    feedTitle:"✨ Memory Feed",
+
+    // recap modal
     recapTitle:"📸 Today’s Recap",
     recapHowto:"How to share:",
     recapHowtoText:"Take a screenshot and send it to the family chat 🙂",
     recapFooterHint:"Tip: open this screen on a phone for the best screenshot.",
+    close:"✖",
 
-    pauseBtn:"🧘 I need a pause",
-    pauseBannerTitle:"🧘 Pause time",
-    pauseBannerText:"10 minutes. Tea/water. No heavy topics. We’re on the same team.",
-    pauseRemaining:"Remaining",
-
-    tagNone:"(no tag)",
-    post:"Post memory",
-
+    // system/status
     pleaseName:"Please enter your name first 🙂",
     saving:"Saving…",
     checkedIn:"Checked in ✅",
     posted:"Posted ✅",
     fillNameMoment:"Please fill your name + the moment.",
+    nothingToExport:"Nothing to export",
 
     vibeNoCheckins:"No check-ins yet",
     vibeCalm:"😇 Calm",
@@ -317,49 +364,107 @@ const i18n = {
     recapCheck:"Check-ins",
     recapFooter:"Vibe meter is… surprisingly accurate 😄",
 
-    moodBoardEmpty:"No one checked in yet. Want to start? 🙂",
-    awardsNone:"No awards yet.",
-    motdEmpty:"No memories yet today. Add the first warm moment ✨",
+    moodBoardTitle:"🧾 Today’s Mood Board",
 
+    awardsNone:"No awards yet.",
+    motdEmpty:"No memories yet. Add the first warm moment ✨",
+
+    // pause
+    pauseBannerTitle:"🧘 Pause time",
+    pauseBannerText:"10 minutes. Tea/water. No heavy topics. We’re on the same team.",
+    pauseRemaining:"Remaining",
+
+    // movie night
     movieTitle:"🍿 Movie Night (Vote)",
     movieHint:"Tap 👍 to vote. Tap again to unvote. Everyone sees the same winner.",
+    movieReload:"🔄 Refresh list",
+    movieExportBtn:"🧾 Export movie card",
     movieTop:"Top pick tonight:",
     movieNoKey:"TMDB key not set yet (paste it in app.js).",
     movieLoading:"Loading trending movies…",
     movieVotes:"votes",
     movieYouVoted:"You voted",
-    movieExport:"Movie Night Card copied to clipboard ✅"
+    movieVoteBtn:"👍 Vote",
+    movieTrailerBtn:"▶ Trailer",
+    movieErrorPrefix:"Movie error:"
   },
   ru: {
+    // top / global
     soundLabel:"🔊 Звук",
-    motdTitle:"⭐ Момент дня",
-    motdHint:"Самый любимый момент сегодня (по реакциям).",
+    partyBtn:"🎉 Праздник",
     recapBtn:"📸 Итог",
+    exportBtn:"🧾 Экспорт",
+    langBtn:"EN / RU",
+
+    dateToday:"Сегодня",
+    dateYday:"Вчера",
+    date7:"Последние 7",
+    date30:"Последние 30",
+
+    appTitle:"Holiday Harmony",
+    appSubtitle:"Семейная мини-игра: собираем тёплые моменты и держим атмосферу.",
+
+    // cards
+    motdTitle:"⭐ Момент дня",
+    motdHint:"Самый любимый момент (по реакциям).",
+
+    missionTitle:"🎯 Мягкое задание дня",
+    missionDone:"✅ Сделано",
+    missionNew:"🎲 Новое (только мне)",
+    missionHint:"Общее задание дня + личный «переброс».",
+
+    dashTitle:"📊 Семейная панель",
+    kpiMemoriesLabel:"Тёплые моменты",
+    kpiCheckinsLabel:"Отметки настроения",
+    kpiMoodLabel:"Вайб семьи",
+    kpiReactsLabel:"Реакции",
+
+    checkinTitle:"✅ Настроение на сегодня",
+    namePh:"Ваше имя",
+    checkinHint:"Выберите настроение на сегодня (можно поменять позже).",
+    moodCalm:"Спокойно",
+    moodOk:"Нормально",
+    moodOver:"Перегруз",
+    pauseBtn:"🧘 Нужна пауза",
+    defuseBtn:"🧯 Сбросить момент",
+    choreBtn:"🎡 Рулетка дел",
+    activityBtn:"🎲 Активность",
+
+    awardsTitle:"🏆 Награды",
+    awardsHint:"Только добрые награды. Без «прожарки». 😄",
+
+    vaultTitle:"✨ Копилка моментов",
+    post:"Добавить момент",
+    momentPh:"Тёплый момент (например: «Смеялись за завтраком»)",
+    reactionsLabel:"Реакции:",
+    reactionsHint:"Нажмите ❤️ 😂 ⭐ на любом моменте (ещё раз — убрать).",
+
+    bingoTitle:"🎯 Семейное бинго",
+    bingoHint:"Отмечайте клеточки по мере того, как это происходит 🙂",
+
+    feedTitle:"✨ Лента моментов",
+
+    // recap modal
     recapTitle:"📸 Итог дня",
     recapHowto:"Как поделиться:",
     recapHowtoText:"Сделайте скриншот и отправьте в семейный чат 🙂",
     recapFooterHint:"Подсказка: на телефоне скрин получается лучше.",
+    close:"✖",
 
-    pauseBtn:"🧘 Нужна пауза",
-    pauseBannerTitle:"🧘 Пауза",
-    pauseBannerText:"10 минут. Чай/вода. Без тяжёлых тем. Мы одна команда.",
-    pauseRemaining:"Осталось",
-
-    tagNone:"(без тега)",
-    post:"Добавить момент",
-
+    // system/status
     pleaseName:"Сначала введите имя 🙂",
     saving:"Сохраняю…",
     checkedIn:"Отмечено ✅",
     posted:"Добавлено ✅",
     fillNameMoment:"Введите имя и текст момента.",
+    nothingToExport:"Нечего экспортировать",
 
-    vibeNoCheckins:"Пока нет чек-инов",
+    vibeNoCheckins:"Пока нет отметок",
     vibeCalm:"😇 Спокойно",
-    vibeOkay:"😐 Норм",
+    vibeOkay:"😐 Нормально",
     vibeOver:"😤 Перегруз",
 
-    cozyStart:"🙂 Разогреваемся",
+    cozyStart:"🙂 Тихий старт",
     goodVibes:"🙂 Хороший вайб",
     greatDay:"😄 Прям тепло пошло",
     gentleReset:"🧯 Нужна мягкая пауза",
@@ -369,26 +474,39 @@ const i18n = {
     greatNote:"Еда, смех и чуть отдыха — идеально.",
     resetNote:"Чай/прогулка часто спасают вечер.",
 
-    recapTitleInline:"Итог дня:",
+    recapTitleInline:"Итог:",
     recapMem:"Моменты",
     recapReact:"Реакции",
-    recapCheck:"Чек-ины",
+    recapCheck:"Настроение",
     recapFooter:"Шкала вайба… подозрительно точная 😄",
 
-    moodBoardEmpty:"Пока никто не отметился. Начнём? 🙂",
+    moodBoardTitle:"🧾 Доска настроения",
+
     awardsNone:"Пока нет наград.",
     motdEmpty:"Сегодня ещё нет моментов. Добавьте первый тёплый момент ✨",
 
+    // pause
+    pauseBannerTitle:"🧘 Пауза",
+    pauseBannerText:"10 минут. Чай/вода. Без тяжёлых тем. Мы одна команда.",
+    pauseRemaining:"Осталось",
+
+    // movie night
     movieTitle:"🍿 Кино-вечер (голосуем)",
     movieHint:"Жми 👍 чтобы голосовать. Жми ещё раз — убрать голос. Победителя видят все.",
+    movieReload:"🔄 Обновить список",
+    movieExportBtn:"🧾 Экспорт карточки",
     movieTop:"Лидер вечера:",
-    movieNoKey:"TMDB ключ не задан (вставь в app.js).",
+    movieNoKey:"TMDB ключ не задан (вставьте в app.js).",
     movieLoading:"Загружаю тренды…",
     movieVotes:"голосов",
     movieYouVoted:"Твой голос",
-    movieExport:"Карточка кино-вечера скопирована ✅"
+    movieVoteBtn:"👍 Голос",
+    movieTrailerBtn:"▶ Трейлер",
+    movieErrorPrefix:"Ошибка кино:"
   }
 };
+
+function getLang(){ return localStorage.getItem("hh_lang") || "en"; }
 
 function getLang(){ return localStorage.getItem("hh_lang") || "en"; }
 function setLang(v){ localStorage.setItem("hh_lang", v); }
@@ -396,29 +514,84 @@ let LANG = getLang();
 function t(key){ return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key; }
 
 function applyLanguage(){
-  document.getElementById("soundLabel").textContent = t("soundLabel");
-  document.getElementById("motdTitle").textContent = t("motdTitle");
-  document.getElementById("motdHint").textContent = t("motdHint");
-  recapBtn.textContent = t("recapBtn");
-  document.getElementById("recapTitle").textContent = t("recapTitle");
-  document.getElementById("recapHowto").textContent = t("recapHowto");
-  document.getElementById("recapHowtoText").textContent = t("recapHowtoText");
-  document.getElementById("recapFooterHint").textContent = t("recapFooterHint");
+  // top bar
+  const $ = (id) => document.getElementById(id);
 
+  $("soundLabel").textContent = t("soundLabel");
+  $("partyBtn").textContent = t("partyBtn");
+  recapBtn.textContent = t("recapBtn");
+  exportBtn.textContent = t("exportBtn");
+
+  btnToday && (btnToday.textContent = t("dateToday"));
+  btnYday && (btnYday.textContent = t("dateYday"));
+  btn7 && (btn7.textContent = t("date7"));
+  btn30 && (btn30.textContent = t("date30"));
+
+  // header card
+  $("appTitle").textContent = t("appTitle");
+  $("appSubtitle").textContent = t("appSubtitle");
+
+  // cards
+  $("motdTitle").textContent = t("motdTitle");
+  $("motdHint").textContent = t("motdHint");
+
+  $("missionTitle").textContent = t("missionTitle");
+  missionDoneBtn && (missionDoneBtn.textContent = t("missionDone"));
+  missionNewBtn && (missionNewBtn.textContent = t("missionNew"));
+  $("missionHint").textContent = t("missionHint");
+
+  $("dashTitle").textContent = t("dashTitle");
+  $("kpiMemoriesLabel").textContent = t("kpiMemoriesLabel");
+  $("kpiCheckinsLabel").textContent = t("kpiCheckinsLabel");
+  $("kpiMoodLabel").textContent = t("kpiMoodLabel");
+  $("kpiReactsLabel").textContent = t("kpiReactsLabel");
+
+  $("checkinTitle").textContent = t("checkinTitle");
+  if (nameEl) nameEl.placeholder = t("namePh");
+  $("checkinHint").textContent = t("checkinHint");
+  $("moodGoodLabel").textContent = t("moodCalm");
+  $("moodOkLabel").textContent = t("moodOk");
+  $("moodBadLabel").textContent = t("moodOver");
   pauseBtn.textContent = t("pauseBtn");
-  document.getElementById("postBtn").textContent = t("post");
+  defuseBtn.textContent = t("defuseBtn");
+  choreBtn.textContent = t("choreBtn");
+  $("activityBtn").textContent = t("activityBtn");
+
+  $("awardsTitle").textContent = t("awardsTitle");
+  $("awardsHint").textContent = t("awardsHint");
+
+  $("vaultTitle").textContent = t("vaultTitle");
+  $("postBtn").textContent = t("post");
+  if (momentEl) momentEl.placeholder = t("momentPh");
+  $("reactionsLabel").textContent = t("reactionsLabel");
+  $("reactionsHint").textContent = t("reactionsHint");
+
+  $("bingoTitle").textContent = t("bingoTitle");
+  $("bingoHint").textContent = t("bingoHint");
+
+  $("feedTitle").textContent = t("feedTitle");
+
+  // recap modal
+  $("recapTitle").textContent = t("recapTitle");
+  $("recapHowto").textContent = t("recapHowto");
+  $("recapHowtoText").textContent = t("recapHowtoText");
+  $("recapFooterHint").textContent = t("recapFooterHint");
+  closeRecapBtn && (closeRecapBtn.textContent = t("close"));
 
   // tags
   const opts = tagSelect?.options;
   if (opts && opts[0]) opts[0].textContent = t("tagNone");
 
   // movie
-  const movieTitle = document.getElementById("movieTitle");
-  const movieHint = document.getElementById("movieHint");
+  const movieTitle = $("movieTitle");
+  const movieHint = $("movieHint");
   if (movieTitle) movieTitle.textContent = t("movieTitle");
   if (movieHint) movieHint.textContent = t("movieHint");
+  movieReloadBtn && (movieReloadBtn.textContent = t("movieReload"));
+  movieExportBtn && (movieExportBtn.textContent = t("movieExportBtn"));
 
   renderMission();
+  renderBingo();
   loadAll();
 }
 langBtn?.addEventListener("click", () => {
@@ -764,7 +937,7 @@ function updateMoodBoard(checkinsToday) {
   }
   const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
   moodBoardEl.innerHTML = `
-    <b style="display:block; margin-bottom:8px;">🧾 ${escapeHtml(LANG==="ru" ? "Доска настроения" : "Today’s Mood Board")}</b>
+    <b style="display:block; margin-bottom:8px;">🧾 ${escapeHtml(t("moodBoardTitle"))}</b>
     ${checkinsToday
       .sort((a,b) => a.name.localeCompare(b.name))
       .map(c => `
@@ -896,7 +1069,7 @@ modalBack?.addEventListener("click", (e) => {
 // ==========================
 
 async function exportNodeAsPng(node, filename = "holiday-harmony.png") {
-  if (!node) throw new Error("Nothing to export");
+  if (!node) throw new Error(t("nothingToExport"));
 
   // Prefer download as PNG
   try {
@@ -1133,8 +1306,8 @@ function renderMovies(movies, votes) {
           <small>👍 ${count} ${escapeHtml(t("movieVotes"))}${iVoted ? " • ✅ " + escapeHtml(t("movieYouVoted")) : ""}</small>
           ${overview ? `<small style="margin-top:6px;">${escapeHtml(overview)}</small>` : ``}
           <div class="movieActions">
-            <button class="movieVoteBtn" type="button" data-vote="${m.id}">👍 Vote</button>
-            <button class="movieVoteBtn" type="button" data-trailer="${m.id}">▶ Trailer</button>
+            <button class="movieVoteBtn" type="button" data-vote="${m.id}">${escapeHtml(t("movieVoteBtn"))}</button>
+            <button class="movieVoteBtn" type="button" data-trailer="${m.id}">${escapeHtml(t("movieTrailerBtn"))}</button>
             <a class="tmdbLink" href="${tmdbPage(m.id)}" target="_blank" rel="noopener">TMDB</a>
           </div>
         </div>
@@ -1193,7 +1366,7 @@ async function loadMoviesAndRender(forceRefetch = false) {
     renderTopPick(window.__hh_movies, votes);
     renderMovies(window.__hh_movies, votes);
   } catch (err) {
-    if (movieStatusEl) movieStatusEl.textContent = "Movie error: " + (err?.message || String(err));
+    if (movieStatusEl) movieStatusEl.textContent = t("movieErrorPrefix") + " " + (err?.message || String(err));
   }
 }
 
