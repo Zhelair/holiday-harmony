@@ -18,6 +18,8 @@
       --shadow:0 10px 30px rgba(0,0,0,.08);
       --radius:18px;
     }
+    *, *::before, *::after { box-sizing: border-box; }
+
     body{
       font-family: Inter, system-ui, Arial;
       max-width: 1100px;
@@ -55,6 +57,8 @@
       align-items:center;
       gap:10px;
     }
+    .pill input[type="checkbox"], .pill input[type="date"]{ width:auto; padding:8px 10px; margin:0; }
+
     .pill button{
       border:1px solid var(--border);
       background:#fff;
@@ -67,7 +71,7 @@
       transition: transform .12s ease;
     }
     .pill button:active{ transform: translateY(1px); }
-    .pill input{ width:auto; margin:0; }
+    .pill input{ width:100%; padding:12px; border-radius:14px; border:1px solid var(--border); margin:8px 0; font-size:15px; background:#fff; }
 
     .card{
       border:1px solid var(--border);
@@ -375,6 +379,9 @@
     </div>
   </div>
 
+
+  <div id="exportCard">
+
   <div class="card">
     <h3 id="dashTitle">📊 Family Dashboard</h3>
     <div id="happinessLevel">Loading…</div>
@@ -515,7 +522,9 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
   <script src="app.js?v=999"></script>
 </body>
