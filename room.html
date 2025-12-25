@@ -103,6 +103,7 @@
     }
     button:hover{ box-shadow: 0 10px 26px rgba(0,0,0,.09); }
     button:active{ transform: translateY(1px); }
+    button[disabled]{ opacity:.55; cursor:not-allowed; box-shadow:none; }
     small{ color: var(--muted); }
 
     .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
@@ -139,6 +140,16 @@
     .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
     .miniRow button{ flex:1; min-width: 200px; }
 
+    .historyRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 6px;
+    }
+    .historyRow button{ width:auto; margin:0; }
+    .historyRow input{ width:auto; margin:0; }
+
     /* ---- Vibe bar ---- */
     .vibeWrap{
       margin-top:12px;
@@ -168,7 +179,6 @@
       100% { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
     }
 
-    /* ---- Memory feed grid ---- */
     .memoryGrid{
       display:grid;
       grid-template-columns: 1fr;
@@ -213,7 +223,6 @@
     }
     .reactBtn:active{ transform: scale(1.05); }
 
-    /* ---- Pause banner ---- */
     .pauseBanner{
       border:1px solid var(--border);
       background: rgba(255,255,255,.95);
@@ -224,7 +233,6 @@
       display:none;
     }
 
-    /* ---- Recap modal ---- */
     .modalBack{
       position: fixed;
       inset: 0;
@@ -273,6 +281,20 @@
 
   <div class="pill" id="debug">Booting…</div>
 
+  <!-- HISTORY / LOOKBACK -->
+  <div class="card">
+    <b id="historyTitle">📅 Lookback</b>
+    <div class="historyRow">
+      <button id="btnToday" type="button">Today</button>
+      <button id="btnYesterday" type="button">Yesterday</button>
+      <button id="btn7" type="button">Last 7</button>
+      <button id="btn30" type="button">Last 30</button>
+      <input id="historyDate" type="date">
+    </div>
+    <small id="historyHint">Choose a date to view memories + vibe from that day. Posting is only for today.</small>
+    <div id="historyStatus" style="margin-top:8px;"></div>
+  </div>
+
   <div id="pauseBanner" class="pauseBanner"></div>
 
   <div class="card">
@@ -284,7 +306,7 @@
     <div class="card">
       <h3 id="motdTitle">⭐ Memory of the Day</h3>
       <div id="motdOut"><small>Loading…</small></div>
-      <small id="motdHint">Most loved memory today (by reactions).</small>
+      <small id="motdHint">Most loved memory for selected day (by reactions).</small>
     </div>
 
     <div class="card">
@@ -294,7 +316,7 @@
         <button id="missionDoneBtn" type="button">✅ I did it</button>
         <button id="missionNewBtn" type="button">🎲 New (just for me)</button>
       </div>
-      <small id="missionHint">Shared daily challenge + personal reroll option.</small>
+      <small id="missionHint">Challenge is always “today”. Lookback is for viewing past.</small>
     </div>
   </div>
 
@@ -303,10 +325,10 @@
     <div id="happinessLevel">Loading…</div>
 
     <div class="kpiRow">
-      <div class="kpi"><b id="kpiMemories">—</b><small id="kpiMemoriesLabel">Happy moments today</small></div>
-      <div class="kpi"><b id="kpiCheckins">—</b><small id="kpiCheckinsLabel">Mood check-ins today</small></div>
-      <div class="kpi"><b id="kpiMood">—</b><small id="kpiMoodLabel">Today’s vibe</small></div>
-      <div class="kpi"><b id="kpiReacts">—</b><small id="kpiReactsLabel">Reactions today</small></div>
+      <div class="kpi"><b id="kpiMemories">—</b><small id="kpiMemoriesLabel">Happy moments</small></div>
+      <div class="kpi"><b id="kpiCheckins">—</b><small id="kpiCheckinsLabel">Mood check-ins</small></div>
+      <div class="kpi"><b id="kpiMood">—</b><small id="kpiMoodLabel">Vibe</small></div>
+      <div class="kpi"><b id="kpiReacts">—</b><small id="kpiReactsLabel">Reactions</small></div>
     </div>
 
     <div id="vibeWrap" class="vibeWrap" title="Family vibe meter">
@@ -320,7 +342,7 @@
     <div class="card">
       <h3 id="checkinTitle">✅ Daily Mood Check-in</h3>
       <input id="name" placeholder="Your name" />
-      <small id="checkinHint">Pick your mood for today (you can change it later).</small>
+      <small id="checkinHint">Mood check-in is for today only.</small>
 
       <div class="moodRow">
         <button class="moodBtn" id="moodGood" type="button"><span>😇</span><span id="moodGoodLabel">Calm</span></button>
@@ -345,7 +367,7 @@
     </div>
 
     <div class="card">
-      <h3 id="awardsTitle">🏆 Awards Preview</h3>
+      <h3 id="awardsTitle">🏆 Awards</h3>
       <div id="awardsOut">Loading…</div>
       <small id="awardsHint">Friendly awards only. No roasting. 😄</small>
     </div>
@@ -394,7 +416,6 @@
 
   <div id="list" class="memoryGrid"></div>
 
-  <!-- Recap modal -->
   <div id="modalBack" class="modalBack">
     <div class="modal">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
@@ -402,18 +423,16 @@
         <button id="closeRecapBtn" type="button" style="width:auto;">✖</button>
       </div>
 
-      <div id="recapModalBody">
-        <div class="row">
-          <div class="box" id="recapModalKpis">Loading…</div>
-          <div class="box" id="recapModalMotd">Loading…</div>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <div class="box" id="recapModalAwards">Loading…</div>
-          <div class="box">
-            <b id="recapHowto">How to share:</b>
-            <div id="recapHowtoText" style="margin-top:8px;">
-              Take a screenshot and send it to the family chat 🙂
-            </div>
+      <div class="row">
+        <div class="box" id="recapModalKpis">Loading…</div>
+        <div class="box" id="recapModalMotd">Loading…</div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div class="box" id="recapModalAwards">Loading…</div>
+        <div class="box">
+          <b id="recapHowto">How to share:</b>
+          <div id="recapHowtoText" style="margin-top:8px;">
+            Take a screenshot and send it to the family chat 🙂
           </div>
         </div>
       </div>
@@ -423,6 +442,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=300"></script>
+  <script src="app.js?v=400"></script>
 </body>
 </html>
