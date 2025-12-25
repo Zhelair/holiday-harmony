@@ -1153,14 +1153,34 @@ function showBingoPopup(rewardText, lineCount){
 function getBingoState(){
   const pool = getBingoPool();
   const raw = localStorage.getItem(bingoKey());
+
+  // Older versions might have saved an object instead of an array.
+  // Normalize to an array of indices.
+  let parsed = [];
+  try { parsed = JSON.parse(raw || "[]"); } catch { parsed = []; }
+
   let saved = [];
-  try { saved = JSON.parse(raw || "[]"); } catch { saved = []; }
+  if (Array.isArray(parsed)) {
+    saved = parsed;
+  } else if (parsed && typeof parsed === "object") {
+    // common shapes: {selected:[...]}, {picked:[...]}, {saved:[...]}
+    if (Array.isArray(parsed.selected)) saved = parsed.selected;
+    else if (Array.isArray(parsed.picked)) saved = parsed.picked;
+    else if (Array.isArray(parsed.saved)) saved = parsed.saved;
+    else {
+      // fallback: treat truthy keys as selected indices
+      saved = Object.keys(parsed).filter(k => parsed[k]).map(k => Number(k));
+    }
+  }
+
+  // coerce to numbers and de-dupe
+  saved = saved.map(n => Number(n)).filter(n => Number.isFinite(n));
 
   // center FREE always on (index 4)
   if (!saved.includes(4)) saved.push(4);
 
   // keep within pool length
-  saved = saved.filter(i => Number.isFinite(i) && i >= 0 && i < pool.length);
+  saved = Array.from(new Set(saved)).filter(i => i >= 0 && i < pool.length);
 
   return { pool, saved };
 }
