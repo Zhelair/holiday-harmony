@@ -1,7 +1,9 @@
 // ==========================
-// Holiday Harmony — app.js
-// Keeps ALL your working features
-// Adds: Lookback (date history) + Micro-confetti on post
+// Holiday Harmony — app.js (FULL)
+// Includes: Memories + Reactions + MOTD + Awards + Dashboard + Vibe Bar + Pause
+// Mission + Activity + Chores + Reset Moment
+// Sound + Party ambience, EN/RU, Recap modal, Export card
+// Quick Tips replaced with Family Bingo (shared via signals)
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -30,7 +32,7 @@ if (!room) {
 }
 document.getElementById("roomLabel").textContent = room;
 
-// ---- share link (keep simple)
+// ---- share link
 const shareLink = document.getElementById("shareLink");
 const base = location.href.substring(0, location.href.lastIndexOf("/") + 1);
 shareLink.textContent = `Share: ${base}room.html?room=${encodeURIComponent(room)}`;
@@ -57,9 +59,7 @@ const defuseOut = document.getElementById("defuseOut");
 const activityOut = document.getElementById("activityOut");
 
 const awardsOut = document.getElementById("awardsOut");
-const tipsOut = document.getElementById("tipsOut");
 const recapOut = document.getElementById("recapOut");
-const newTipBtn = document.getElementById("newTipBtn");
 
 const soundToggle = document.getElementById("soundToggle");
 const partyBtn = document.getElementById("partyBtn");
@@ -74,7 +74,6 @@ const vibeBarEl = document.getElementById("vibeBar");
 const langBtn = document.getElementById("langBtn");
 
 const motdOut = document.getElementById("motdOut");
-
 const pauseBanner = document.getElementById("pauseBanner");
 
 const recapBtn = document.getElementById("recapBtn");
@@ -84,15 +83,26 @@ const recapModalKpis = document.getElementById("recapModalKpis");
 const recapModalMotd = document.getElementById("recapModalMotd");
 const recapModalAwards = document.getElementById("recapModalAwards");
 
-// ---- Lookback DOM
-const btnToday = document.getElementById("btnToday");
-const btnYesterday = document.getElementById("btnYesterday");
-const btn7 = document.getElementById("btn7");
-const btn30 = document.getElementById("btn30");
-const historyDateEl = document.getElementById("historyDate");
-const historyStatusEl = document.getElementById("historyStatus");
+// Export
+const exportBtn = document.getElementById("exportBtn");
+const exportWrap = document.getElementById("exportWrap");
+const exportCard = document.getElementById("exportCard");
+const closeExportBtn = document.getElementById("closeExportBtn");
+const downloadCardBtn = document.getElementById("downloadCardBtn");
+const exportRoomEl = document.getElementById("exportRoom");
+const exportDateEl = document.getElementById("exportDate");
+const exportSubEl = document.getElementById("exportSub");
+const exportKpisEl = document.getElementById("exportKpis");
+const exportMotdEl = document.getElementById("exportMotd");
+const exportAwardsEl = document.getElementById("exportAwards");
 
-
+// Bingo
+const bingoTitle = document.getElementById("bingoTitle");
+const bingoHint = document.getElementById("bingoHint");
+const bingoResetBtn = document.getElementById("bingoResetBtn");
+const bingoStatus = document.getElementById("bingoStatus");
+const bingoGrid = document.getElementById("bingoGrid");
+const bingoWin = document.getElementById("bingoWin");
 
 // ---- helpers
 function escapeHtml(str) {
@@ -107,28 +117,28 @@ function todayISODate() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
-function addDaysISO(baseISO, delta) {
-  const d = new Date(`${baseISO}T00:00:00`);
-  d.setDate(d.getDate() + delta);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+function isSameLocalDay(isoOrTs) {
+  const d = new Date(isoOrTs);
+  return d.toDateString() === new Date().toDateString();
 }
 function fmtLocal(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
-function isSameLocalDay(isoOrTs, isoDate) {
-  const d = new Date(isoOrTs);
-  return d.toDateString() === new Date(`${isoDate}T00:00:00`).toDateString();
-}
-function isoToStartEnd(isoDate) {
-  const start = new Date(`${isoDate}T00:00:00`);
-  const end = new Date(`${isoDate}T23:59:59.999`);
-  return { start: start.toISOString(), end: end.toISOString() };
+function msToMmSs(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor(s / 60)).padStart(2,"0");
+  const ss = String(s % 60)).padStart(2,"0");
+  return `${mm}:${ss}`;
 }
 
-// ---- Sound
+// --- Fix small typo if any browser chokes:
+function msToMmSsSafe(ms){
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor(s / 60)).padStart(2,"0");
+  const ss = String(s % 60).padStart(2,"0");
+  return `${mm}:${ss}`;
+}
+
 function soundOn() {
   return soundToggle ? !!soundToggle.checked : true;
 }
@@ -161,7 +171,7 @@ partyBtn?.addEventListener("click", () => {
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.85;
+    ambienceAudio.volume = 0.95;
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -196,78 +206,15 @@ function ensureDeviceId() {
 const DEVICE_ID = ensureDeviceId();
 
 // ==========================
-// Lookback state (NEW)
-// ==========================
-let SELECTED_DATE = (params.get("date") || "").trim() || todayISODate();
-if (historyDateEl) historyDateEl.value = SELECTED_DATE;
-
-function viewingToday() {
-  return SELECTED_DATE === todayISODate();
-}
-function setReadOnlyUI() {
-  const ro = !viewingToday();
-  const msg = ro
-    ? "🔒 Viewing past date. Posting + mood + pause are disabled."
-    : "";
-  if (historyStatusEl) historyStatusEl.textContent = msg;
-
-  // disable actions that change DB
-  document.getElementById("postBtn")?.toggleAttribute("disabled", ro);
-  document.getElementById("moodGood")?.toggleAttribute("disabled", ro);
-  document.getElementById("moodOk")?.toggleAttribute("disabled", ro);
-  document.getElementById("moodBad")?.toggleAttribute("disabled", ro);
-  pauseBtn?.toggleAttribute("disabled", ro);
-}
-function setSelectedDate(iso) {
-  SELECTED_DATE = iso;
-  if (historyDateEl) historyDateEl.value = iso;
-
-  const url = new URL(location.href);
-  url.searchParams.set("room", room);
-  url.searchParams.set("date", iso);
-  history.replaceState({}, "", url.toString());
-
-  setReadOnlyUI();
-  loadAll();
-}
-
-btnToday?.addEventListener("click", () => setSelectedDate(todayISODate()));
-btnYesterday?.addEventListener("click", () => setSelectedDate(addDaysISO(todayISODate(), -1)));
-btn7?.addEventListener("click", () => setSelectedDate(addDaysISO(todayISODate(), -6)));
-btn30?.addEventListener("click", () => setSelectedDate(addDaysISO(todayISODate(), -29)));
-historyDateEl?.addEventListener("change", () => {
-  const iso = (historyDateEl.value || "").trim();
-  if (iso) setSelectedDate(iso);
-});
-
-// ==========================
-// Micro-confetti (NEW)
-// ==========================
-function microConfetti() {
-  const count = 18;
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement("div");
-    el.className = "confetti";
-    el.style.left = (window.innerWidth * 0.5 + (Math.random() * 240 - 120)) + "px";
-    el.style.top = (window.innerHeight * 0.18 + (Math.random() * 20 - 10)) + "px";
-    el.style.background = `hsl(${Math.floor(Math.random() * 360)}, 90%, 75%)`;
-    el.style.animationDelay = (Math.random() * 80) + "ms";
-    el.style.width = (8 + Math.random() * 8) + "px";
-    el.style.height = (10 + Math.random() * 10) + "px";
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1100);
-  }
-}
-
-// ==========================
 // Language (EN/RU)
 // ==========================
 const i18n = {
   en: {
     soundLabel:"🔊 Sound",
+    recapBtn:"📸 Recap",
+    exportBtn:"🖼 Export",
     motdTitle:"⭐ Memory of the Day",
     motdHint:"Most loved memory today (by reactions).",
-    recapBtn:"📸 Recap",
     recapTitle:"📸 Today’s Recap",
     recapHowto:"How to share:",
     recapHowtoText:"Take a screenshot and send it to the family chat 🙂",
@@ -308,7 +255,7 @@ const i18n = {
     greatNote:"Food, laughs, and a little rest. Perfect.",
     resetNote:"Tea/walk mode can save the evening.",
 
-    recapTitleInline:"Day recap:",
+    recapTitleInline:"Today recap:",
     recapMem:"Memories",
     recapReact:"Reactions",
     recapCheck:"Check-ins",
@@ -316,18 +263,27 @@ const i18n = {
 
     moodBoardEmpty:"No one checked in yet. Want to start? 🙂",
     awardsNone:"No awards yet.",
-    motdEmpty:"No memories on this day yet. Add the first warm moment ✨",
+    motdEmpty:"No memories yet today. Add the first warm moment ✨",
 
     badMemoryId:"Bad memory id (not a number): ",
     reactSelectErr:"REACTION SELECT ERROR:\n",
     reactInsertErr:"REACTION INSERT ERROR:\n",
     reactDeleteErr:"REACTION DELETE ERROR:\n",
+
+    bingoTitle:"🎯 Family Bingo",
+    bingoHint:"Tap squares together. Complete a line = Bingo!",
+    bingoNew:"🔄 New card (today)",
+    bingoDoneBy:"Done by",
+    bingoWinner:"🎉 BINGO!",
+    bingoWinnerText:"Line completed. Screenshot-worthy moment.",
+    bingoLoading:"Loading Bingo…",
   },
   ru: {
     soundLabel:"🔊 Звук",
-    motdTitle:"⭐ Момент дня",
-    motdHint:"Самый любимый момент (по реакциям).",
     recapBtn:"📸 Итог",
+    exportBtn:"🖼 Экспорт",
+    motdTitle:"⭐ Момент дня",
+    motdHint:"Самый любимый момент сегодня (по реакциям).",
     recapTitle:"📸 Итог дня",
     recapHowto:"Как поделиться:",
     recapHowtoText:"Сделайте скриншот и отправьте в семейный чат 🙂",
@@ -376,12 +332,20 @@ const i18n = {
 
     moodBoardEmpty:"Пока никто не отметился. Начнём? 🙂",
     awardsNone:"Пока нет наград.",
-    motdEmpty:"В этот день ещё нет моментов. Добавьте первый тёплый момент ✨",
+    motdEmpty:"Сегодня ещё нет моментов. Добавьте первый тёплый момент ✨",
 
     badMemoryId:"Плохой id (не число): ",
     reactSelectErr:"ОШИБКА SELECT реакций:\n",
     reactInsertErr:"ОШИБКА INSERT реакций:\n",
     reactDeleteErr:"ОШИБКА DELETE реакций:\n",
+
+    bingoTitle:"🎯 Семейное Бинго",
+    bingoHint:"Отмечайте вместе. Линия = БИНГО!",
+    bingoNew:"🔄 Новая карточка (сегодня)",
+    bingoDoneBy:"Отметил(а)",
+    bingoWinner:"🎉 БИНГО!",
+    bingoWinnerText:"Линия собрана. Самое время для скриншота.",
+    bingoLoading:"Загружаю бинго…",
   }
 };
 
@@ -392,9 +356,10 @@ function t(key){ return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key; 
 
 function applyLanguage(){
   document.getElementById("soundLabel").textContent = t("soundLabel");
+  recapBtn.textContent = t("recapBtn");
+  exportBtn.textContent = t("exportBtn");
   document.getElementById("motdTitle").textContent = t("motdTitle");
   document.getElementById("motdHint").textContent = t("motdHint");
-  recapBtn.textContent = t("recapBtn");
   document.getElementById("recapTitle").textContent = t("recapTitle");
   document.getElementById("recapHowto").textContent = t("recapHowto");
   document.getElementById("recapHowtoText").textContent = t("recapHowtoText");
@@ -411,6 +376,11 @@ function applyLanguage(){
   tagSelect.options[4].textContent = t("tagTea");
   tagSelect.options[5].textContent = t("tagGifts");
   tagSelect.options[6].textContent = t("tagKids");
+
+  // Bingo
+  bingoTitle.textContent = t("bingoTitle");
+  bingoHint.textContent = t("bingoHint");
+  bingoResetBtn.textContent = t("bingoNew");
 
   renderMission();
   loadAll();
@@ -470,6 +440,32 @@ function pools() {
         "Ты 5 минут убираешься 🧹",
         "Ты отдыхаешь — заслужил(а) 😌",
         "Ты выбираешь фильм 🎬"
+      ],
+      bingo: [
+        "Сказать искренний комплимент",
+        "Сделать чай/кофе кому-то",
+        "Сфоткаться вместе (хоть селфи)",
+        "Посмеяться над семейной историей",
+        "10 минут прогулки",
+        "Помочь на кухне",
+        "Поставить музыку и подпеть",
+        "Спросить: «Как ты реально?»",
+        "Посмотреть 10 минут старых фото",
+        "Сказать «Спасибо» (вслух)",
+        "Сделать маленькую уборку 5 минут",
+        "Дать кому-то выиграть спор 😄",
+        "Обнять/пожать руку (по желанию)",
+        "Сыграть в мини-игру",
+        "Сказать «Я рад(а), что мы вместе»",
+        "Не обсуждать тяжёлые темы 30 минут",
+        "Вместе выбрать фильм",
+        "Похвалить еду",
+        "Сделать смешную семейную фразу дня",
+        "Принести перекус/фрукт",
+        "Поделиться приятным воспоминанием",
+        "Сделать добро молча",
+        "Сказать «Давай без напряжения»",
+        "Сфоткать уютный момент",
       ]
     };
   }
@@ -517,12 +513,38 @@ function pools() {
       "You do a 5-minute tidy sprint 🧹",
       "You rest — you earned it 😌",
       "You pick the movie 🎬"
+    ],
+    bingo: [
+      "Give a sincere compliment",
+      "Make tea/coffee for someone",
+      "Take a group photo (even a selfie)",
+      "Laugh at a family story",
+      "10-minute walk",
+      "Help in the kitchen",
+      "Play a song and sing along",
+      "Ask: “How are you really?”",
+      "Look at old photos for 10 min",
+      "Say “Thank you” out loud",
+      "5-minute tidy sprint",
+      "Let someone win an argument 😄",
+      "Hug/handshake (optional)",
+      "Play a tiny game",
+      "Say “I’m glad we’re together”",
+      "No heavy topics for 30 min",
+      "Pick a movie together",
+      "Compliment the food",
+      "Create a funny phrase of the day",
+      "Bring a snack/fruit",
+      "Share one warm memory",
+      "Do a kind thing quietly",
+      "Say “let’s keep it light”",
+      "Snap a cozy moment",
     ]
   };
 }
 
 // ==========================
-// Mission (local) — still TODAY-based on purpose
+// Mission (local)
 // ==========================
 function hashStringToInt(str) {
   let h = 0;
@@ -549,7 +571,6 @@ function renderMission() {
 }
 missionDoneBtn?.addEventListener("click", () => {
   playSound("tap");
-  if (!viewingToday()) return;
   const name = (nameEl.value || "").trim();
   if (!name) return alert(t("pleaseName"));
   localStorage.setItem(missionDoneKey(), "1");
@@ -558,7 +579,6 @@ missionDoneBtn?.addEventListener("click", () => {
 });
 missionNewBtn?.addEventListener("click", () => {
   playSound("tap");
-  if (!viewingToday()) return;
   const { missions } = pools();
   localStorage.setItem(myMissionOverrideKey(), String(Math.floor(Math.random() * missions.length)));
   renderMission();
@@ -567,7 +587,7 @@ missionNewBtn?.addEventListener("click", () => {
 renderMission();
 
 // ==========================
-// Activity / Reset / Chores (works anytime)
+// Activity / Reset / Chores
 // ==========================
 document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
@@ -589,17 +609,9 @@ choreBtn?.addEventListener("click", () => {
 });
 
 // ==========================
-// Pause (shared via Supabase signals) — today only
+// Pause (shared via Supabase signals)
 // ==========================
-function msToMmSs(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const mm = String(Math.floor(s / 60)).padStart(2,"0");
-  const ss = String(s % 60).padStart(2,"0");
-  return `${mm}:${ss}`;
-}
-
 async function sendPause() {
-  if (!viewingToday()) return;
   playSound("tap");
   const { error } = await supa.from("signals").insert([{
     room_code: room,
@@ -613,10 +625,10 @@ async function sendPause() {
   playSound("success");
   await loadAll();
 }
-pauseBtn?.addEventListener("click", () => { sendPause(); });
+pauseBtn?.addEventListener("click", () => sendPause());
 
 // ==========================
-// Mood check-in — today only
+// Mood check-in
 // ==========================
 const moodButtons = {
   good: document.getElementById("moodGood"),
@@ -627,7 +639,6 @@ function clearMoodSelection() {
   Object.values(moodButtons).forEach(btn => btn?.classList.remove("moodSelected"));
 }
 async function setMood(mood) {
-  if (!viewingToday()) return;
   const name = (nameEl.value || "").trim();
   if (!name) { moodStatusEl.textContent = t("pleaseName"); return; }
 
@@ -655,14 +666,13 @@ moodButtons.good?.addEventListener("click", () => setMood("good"));
 moodButtons.ok?.addEventListener("click", () => setMood("ok"));
 moodButtons.bad?.addEventListener("click", () => setMood("bad"));
 
-function loadMyMoodSelection(checkinsForSelectedDate) {
+function loadMyMoodSelection(checkinsToday) {
   const name = (nameEl.value || "").trim();
   if (!name) return;
-
-  const mine = checkinsForSelectedDate.find(c => c.name === name);
-  clearMoodSelection();
+  const mine = checkinsToday.find(c => c.name === name);
   if (!mine) return;
 
+  clearMoodSelection();
   if (mine.mood === "good") moodButtons.good?.classList.add("moodSelected");
   if (mine.mood === "ok") moodButtons.ok?.classList.add("moodSelected");
   if (mine.mood === "bad") moodButtons.bad?.classList.add("moodSelected");
@@ -711,62 +721,9 @@ listEl?.addEventListener("click", async (e) => {
 });
 
 // ==========================
-// Tips
-// ==========================
-function pickRandom(arr, count = 3) {
-  const copy = [...arr];
-  const out = [];
-  while (copy.length && out.length < count) out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
-  return out;
-}
-function summarizeMood(checkins) {
-  const counts = { good: 0, ok: 0, bad: 0 };
-  for (const c of checkins) if (counts[c.mood] !== undefined) counts[c.mood]++;
-  let vibe = t("vibeNoCheckins");
-  if (checkins.length > 0) {
-    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
-    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
-    else vibe = t("vibeOkay");
-  }
-  return { counts, vibe };
-}
-function buildTipsPool(memoriesCount, checkins) {
-  const { counts } = summarizeMood(checkins);
-  const tips = [];
-  if (LANG === "ru") {
-    if (checkins.length === 0) tips.push("✅ Попросите всех отметиться — один тап улучшает атмосферу.");
-    if (memoriesCount === 0) tips.push("✨ Добавьте один тёплый момент. «Хороший чай» тоже считается.");
-    if (counts.bad >= 2) tips.push("🧯 Если перегруз: чай/прогулка часто спасают вечер.");
-    tips.push("🫶 Круг комплиментов: по одному искреннему предложению.");
-    tips.push("🎬 Выбор фильма: каждый предлагает по одному — потом голосование.");
-    tips.push("🍵 Правило чая: без «разборов» во время чая.");
-    tips.push("😂 «А помнишь…» — лучший семейный клей.");
-    tips.push("⭐ Ставьте реакции — вайб растёт быстрее.");
-    return tips;
-  }
-  if (checkins.length === 0) tips.push("✅ Ask everyone to check in. One tap = better vibe.");
-  if (memoriesCount === 0) tips.push("✨ Post one tiny happy moment. ‘Good tea’ counts.");
-  if (counts.bad >= 2) tips.push("🧯 If someone is overloaded: tea/walk mode can save the evening.");
-  tips.push("🫶 Compliment round: one sincere sentence each.");
-  tips.push("🎬 Movie decision: everyone suggests 1 title, then vote.");
-  tips.push("🍵 Tea break rule: no problem-solving during tea.");
-  tips.push("😂 ‘Remember when…’ story time is the best glue.");
-  tips.push("⭐ React to memories — it boosts the vibe fast.");
-  return tips;
-}
-let lastTipsPool = [];
-newTipBtn?.addEventListener("click", () => {
-  playSound("tap");
-  if (!lastTipsPool.length) return;
-  tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(tip => `<div style="margin:10px 0;">${escapeHtml(tip)}</div>`).join("");
-});
-
-// ==========================
-// Post memory (with TAG prefix) — today only + confetti
+// Post memory (with TAG prefix)
 // ==========================
 async function postMemory() {
-  if (!viewingToday()) return;
-
   statusEl.textContent = "";
   const name = (nameEl.value || "").trim();
   let moment = (momentEl.value || "").trim();
@@ -790,7 +747,6 @@ async function postMemory() {
   momentEl.value = "";
   statusEl.textContent = t("posted");
   playSound("success");
-  microConfetti();
   await loadAll();
 }
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
@@ -817,7 +773,6 @@ function setVibeBar(percent, vibeText) {
   } else {
     vibeBarEl.style.background = "linear-gradient(90deg, #ffe7b3, #fff2d6)";
   }
-
   vibeBarEl.style.backgroundSize = "200% 100%";
 
   if (lastVibePercent === null || Math.abs(p - lastVibePercent) >= 3) {
@@ -826,16 +781,16 @@ function setVibeBar(percent, vibeText) {
   }
 }
 
-function updateMoodBoard(checkins) {
+function updateMoodBoard(checkinsToday) {
   if (!moodBoardEl) return;
-  if (checkins.length === 0) {
+  if (checkinsToday.length === 0) {
     moodBoardEl.innerHTML = `<small>${escapeHtml(t("moodBoardEmpty"))}</small>`;
     return;
   }
   const moodEmoji = (m) => m === "good" ? "😇" : m === "ok" ? "😐" : "😤";
   moodBoardEl.innerHTML = `
-    <b style="display:block; margin-bottom:8px;">🧾 ${escapeHtml(LANG==="ru" ? "Доска настроения" : "Mood Board")}</b>
-    ${checkins
+    <b style="display:block; margin-bottom:8px;">🧾 ${escapeHtml(LANG==="ru" ? "Доска настроения" : "Today’s Mood Board")}</b>
+    ${checkinsToday
       .sort((a,b) => a.name.localeCompare(b.name))
       .map(c => `
         <div style="padding:10px 12px; border:1px solid #e7e7ef; border-radius:14px; margin:8px 0; background:#fff;">
@@ -845,7 +800,19 @@ function updateMoodBoard(checkins) {
   `;
 }
 
-function updateAwards(memories, checkins, reactionsByMemory) {
+function summarizeMood(checkinsToday) {
+  const counts = { good: 0, ok: 0, bad: 0 };
+  for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
+  let vibe = t("vibeNoCheckins");
+  if (checkinsToday.length > 0) {
+    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
+    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
+    else vibe = t("vibeOkay");
+  }
+  return { counts, vibe };
+}
+
+function updateAwards(memories, reactionsByMemory) {
   if (!awardsOut) return;
 
   const byName = {};
@@ -870,49 +837,49 @@ function updateAwards(memories, checkins, reactionsByMemory) {
     </div>`;
 }
 
-function updateDashboard(memoriesCount, checkins, reactionsCount) {
-  const { counts, vibe } = summarizeMood(checkins);
+function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount) {
+  const { counts, vibe } = summarizeMood(checkinsToday);
 
-  kpiMemoriesEl.textContent = String(memoriesCount);
-  kpiCheckinsEl.textContent = String(checkins.length);
+  kpiMemoriesEl.textContent = String(memoriesTodayCount);
+  kpiCheckinsEl.textContent = String(checkinsToday.length);
   kpiMoodEl.textContent = vibe;
-  kpiReactsEl.textContent = String(reactionsCount);
+  kpiReactsEl.textContent = String(reactionsTodayCount);
 
   const el = document.getElementById("happinessLevel");
 
   let label = t("cozyStart");
   let note = t("cozyNote");
-  if (memoriesCount >= 2 || checkins.length >= 2) { label = t("goodVibes"); note = t("goodNote"); }
-  if (memoriesCount >= 4 && counts.bad === 0) { label = t("greatDay"); note = t("greatNote"); }
-  if (counts.bad >= 2 && checkins.length >= 3) { label = t("gentleReset"); note = t("resetNote"); }
+  if (memoriesTodayCount >= 2 || checkinsToday.length >= 2) { label = t("goodVibes"); note = t("goodNote"); }
+  if (memoriesTodayCount >= 4 && counts.bad === 0) { label = t("greatDay"); note = t("greatNote"); }
+  if (counts.bad >= 2 && checkinsToday.length >= 3) { label = t("gentleReset"); note = t("resetNote"); }
 
   el.innerHTML = `<b>${escapeHtml(label)}</b><br><small>${escapeHtml(note)}</small>`;
 
-  const badCount = (checkins || []).filter(c => c.mood === "bad").length;
-  const scoreRaw = (memoriesCount * 12) + (reactionsCount * 3) + (checkins.length * 8) - (badCount * 12);
+  const badCount = (checkinsToday || []).filter(c => c.mood === "bad").length;
+  const scoreRaw = (memoriesTodayCount * 12) + (reactionsTodayCount * 3) + (checkinsToday.length * 8) - (badCount * 12);
   const score = Math.max(0, Math.min(100, scoreRaw));
   setVibeBar(score, vibe);
 
   recapOut.innerHTML = `
     <b>${escapeHtml(t("recapTitleInline"))}</b><br>
-    • ${escapeHtml(t("recapMem"))}: <b>${memoriesCount}</b> • ${escapeHtml(t("recapReact"))}: <b>${reactionsCount}</b><br>
+    • ${escapeHtml(t("recapMem"))}: <b>${memoriesTodayCount}</b> • ${escapeHtml(t("recapReact"))}: <b>${reactionsTodayCount}</b><br>
     • ${escapeHtml(t("recapCheck"))}: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
     <small>${escapeHtml(t("recapFooter"))}</small>
   `;
 }
 
 // ==========================
-// Memory of the Day (most reactions in SELECTED_DATE)
+// Memory of the Day (most reactions today)
 // ==========================
 function renderMOTD(memories, reactionsByMemory) {
-  const dayMems = memories; // already filtered by selected date
-  if (!dayMems.length) {
+  const todays = memories.filter(m => isSameLocalDay(m.created_at));
+  if (!todays.length) {
     motdOut.innerHTML = `<small>${escapeHtml(t("motdEmpty"))}</small>`;
     return { motd: null };
   }
 
   let best = null;
-  for (const m of dayMems) {
+  for (const m of todays) {
     const rx = reactionsByMemory[String(m.id)]?.total || 0;
     if (!best || rx > best.rx || (rx === best.rx && new Date(m.created_at) > new Date(best.created_at))) {
       best = { ...m, rx };
@@ -931,7 +898,7 @@ function renderMOTD(memories, reactionsByMemory) {
 }
 
 // ==========================
-// Pause banner rendering (show only if within 10m of latest pause signal)
+// Pause banner rendering
 // ==========================
 function renderPauseBanner(latestPauseSignal) {
   if (!latestPauseSignal) {
@@ -955,7 +922,7 @@ function renderPauseBanner(latestPauseSignal) {
   pauseBanner.innerHTML = `
     <b>${escapeHtml(t("pauseBannerTitle"))}</b><br>
     ${escapeHtml(t("pauseBannerText"))}<br>
-    <small>${escapeHtml(t("pauseRemaining"))}: <b>${escapeHtml(msToMmSs(remaining))}</b></small>
+    <small>${escapeHtml(t("pauseRemaining"))}: <b>${escapeHtml(msToMmSsSafe(remaining))}</b></small>
   `;
 }
 
@@ -973,67 +940,42 @@ modalBack?.addEventListener("click", (e) => {
   if (e.target === modalBack) modalBack.style.display = "none";
 });
 
-
-
 // ==========================
 // Export Card (PNG)
 // ==========================
-const exportBtn = document.getElementById("exportBtn");
-const exportWrap = document.getElementById("exportWrap");
-const exportCard = document.getElementById("exportCard");
-const closeExportBtn = document.getElementById("closeExportBtn");
-const downloadCardBtn = document.getElementById("downloadCardBtn");
-
-const exportRoomEl = document.getElementById("exportRoom");
-const exportDateEl = document.getElementById("exportDate");
-const exportSubEl = document.getElementById("exportSub");
-const exportKpisEl = document.getElementById("exportKpis");
-const exportMotdEl = document.getElementById("exportMotd");
-const exportAwardsEl = document.getElementById("exportAwards");
-
 function exportDateLabel() {
   try { return new Date().toLocaleDateString(); } catch { return todayISODate(); }
 }
-
 function stripHeavy(html) {
-  // keeps the card clean; avoids huge nested buttons
   return String(html || "")
-    .replace(/<button[\s\S]*?<\/button>/g, "")
-    .replace(/style="[^"]*"/g, (m) => m) // keep styles
+    .replace(/<button[\s\S]*?<\/button>/g, "");
 }
-
 function openExportCard() {
   playSound("tap");
   exportRoomEl.textContent = "🏠 " + room;
   exportDateEl.textContent = exportDateLabel();
   exportSubEl.textContent = (LANG === "ru") ? "Итог дня (карточка)" : "Today recap (card)";
 
-  // Use already-rendered content
   exportKpisEl.innerHTML = stripHeavy(recapOut.innerHTML);
   exportMotdEl.innerHTML = stripHeavy(motdOut.innerHTML);
   exportAwardsEl.innerHTML = stripHeavy(awardsOut.innerHTML);
 
   exportWrap.style.display = "flex";
 }
-
 function closeExportCard() {
   exportWrap.style.display = "none";
 }
-
 exportBtn?.addEventListener("click", openExportCard);
 closeExportBtn?.addEventListener("click", closeExportCard);
 exportWrap?.addEventListener("click", (e) => {
   if (e.target === exportWrap) closeExportCard();
 });
-
 downloadCardBtn?.addEventListener("click", async () => {
   playSound("tap");
   if (!window.html2canvas) {
     alert("html2canvas not loaded.");
     return;
   }
-
-  // render crisp on mobile
   const scale = Math.min(2, window.devicePixelRatio || 1);
 
   const canvas = await window.html2canvas(exportCard, {
@@ -1046,90 +988,241 @@ downloadCardBtn?.addEventListener("click", async () => {
   link.download = `holiday-harmony-${room}-${todayISODate()}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
-
   playSound("success");
 });
 
 // ==========================
-// Load + render (no blinking) — NOW DATE-AWARE
+// Bingo (shared via signals)
+// ==========================
+function seededShuffle(arr, seedStr) {
+  const a = [...arr];
+  let seed = hashStringToInt(seedStr) || 1;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function bingoStorageKey() {
+  return `hh_bingo_seed_${room}_${todayISODate()}`;
+}
+function getBingoSeed() {
+  return localStorage.getItem(bingoStorageKey()) || "";
+}
+function setBingoSeed(v) {
+  localStorage.setItem(bingoStorageKey(), v);
+}
+function buildBingoCard() {
+  const { bingo } = pools();
+  const seed = getBingoSeed() || `${room}|${todayISODate()}|base`;
+  const picked = seededShuffle(bingo, seed).slice(0, 24);
+  const card = [];
+  for (let i = 0; i < 25; i++) {
+    if (i === 12) card.push({ key: "free", text: (LANG === "ru") ? "⭐ СВОБОДНО" : "⭐ FREE", free: true });
+    else {
+      const idx = i < 12 ? i : i - 1;
+      card.push({ key: `b${idx}`, text: picked[idx], free: false });
+    }
+  }
+  return card;
+}
+async function pushBingoToggle(tileKey, done) {
+  const name = ((nameEl?.value || getSavedName()) || "Someone").trim() || "Someone";
+  const payload = {
+    date: todayISODate(),
+    key: tileKey,
+    done: !!done,
+    by: name
+  };
+  const { error } = await supa.from("signals").insert([{
+    room_code: room,
+    type: "bingo",
+    payload: JSON.stringify(payload)
+  }]);
+  if (error) throw error;
+}
+function parseBingoSignals(signals) {
+  const state = {};
+  for (const s of (signals || [])) {
+    let p = null;
+    try { p = JSON.parse(s.payload || "{}"); } catch { p = null; }
+    if (!p || p.date !== todayISODate() || !p.key) continue;
+    const ts = new Date(s.created_at).getTime();
+    if (!state[p.key] || ts > state[p.key].ts) {
+      state[p.key] = { done: !!p.done, by: p.by || "", ts };
+    }
+  }
+  state["free"] = { done: true, by: "", ts: Date.now() };
+  return state;
+}
+function computeBingoWin(doneMap) {
+  const idxToKey = (n) => (n === 12) ? "free" : `b${n < 12 ? n : n - 1}`;
+  const lines = [];
+  for (let r = 0; r < 5; r++) {
+    const row = [];
+    for (let c = 0; c < 5; c++) row.push(idxToKey(r * 5 + c));
+    lines.push(row);
+  }
+  for (let c = 0; c < 5; c++) {
+    const col = [];
+    for (let r = 0; r < 5; r++) col.push(idxToKey(r * 5 + c));
+    lines.push(col);
+  }
+  lines.push([idxToKey(0), idxToKey(6), idxToKey(12), idxToKey(18), idxToKey(24)]);
+  lines.push([idxToKey(4), idxToKey(8), idxToKey(12), idxToKey(16), idxToKey(20)]);
+  for (const line of lines) {
+    if (line.every(k => doneMap[k] === true)) return true;
+  }
+  return false;
+}
+function microConfetti() {
+  const emojis = ["🎉","✨","⭐","🎊","💛"];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti";
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.setProperty("--dx", `${(Math.random() * 240 - 120).toFixed(0)}px`);
+    el.style.setProperty("--dy", `${(Math.random() * 120).toFixed(0)}px`);
+    el.style.setProperty("--rot", `${(Math.random() * 120 - 60).toFixed(0)}deg`);
+    el.style.left = `${(Math.random() * 70 + 15).toFixed(0)}%`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+}
+let lastBingoWon = false;
+function renderBingo(card, state) {
+  if (!bingoGrid) return;
+
+  const doneMap = {};
+  for (const k in state) doneMap[k] = !!state[k].done;
+
+  const won = computeBingoWin(doneMap);
+
+  bingoGrid.innerHTML = card.map(tile => {
+    const st = state[tile.key];
+    const done = tile.free ? true : !!st?.done;
+    const by = st?.by ? ` • ${t("bingoDoneBy")}: ${escapeHtml(st.by)}` : "";
+    const cls = `bingoTile ${done ? "bingoDone" : ""} ${tile.free ? "bingoFree" : ""}`;
+
+    return `
+      <div class="${cls}" data-bkey="${tile.key}">
+        <div>
+          <div>${escapeHtml(tile.text)}</div>
+          <small style="opacity:.7;">${done && !tile.free ? by : ""}</small>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (won) {
+    bingoWin.innerHTML = `
+      <div class="bingoWinBox">
+        <b>${escapeHtml(t("bingoWinner"))}</b><br>
+        <small>${escapeHtml(t("bingoWinnerText"))}</small>
+      </div>
+    `;
+    if (!lastBingoWon) microConfetti();
+  } else {
+    bingoWin.innerHTML = "";
+  }
+  lastBingoWon = won;
+}
+bingoResetBtn?.addEventListener("click", () => {
+  playSound("tap");
+  setBingoSeed(`${room}|${todayISODate()}|${Math.random().toString(16).slice(2)}`);
+  playSound("success");
+  loadAll();
+});
+bingoGrid?.addEventListener("click", async (e) => {
+  const tile = e.target.closest(".bingoTile");
+  if (!tile) return;
+  const key = tile.getAttribute("data-bkey");
+  if (!key || key === "free") return;
+
+  const name = (nameEl.value || "").trim();
+  if (!name) return alert(t("pleaseName"));
+
+  try {
+    playSound("tap");
+    bingoStatus.textContent = t("saving");
+    const isDone = tile.classList.contains("bingoDone");
+    await pushBingoToggle(key, !isDone);
+    playSound("success");
+    bingoStatus.textContent = "";
+    await loadAll();
+  } catch (err) {
+    bingoStatus.textContent = "Error: " + (err?.message || String(err));
+  }
+});
+
+// ==========================
+// Load + render (no blinking)
 // ==========================
 let lastRenderKey = "";
 
 async function loadAll() {
   try {
-    const { start, end } = isoToStartEnd(SELECTED_DATE);
+    const today = todayISODate();
+    const todayStr = new Date().toDateString();
 
-    const [memRes, chkRes, reactRes, sigRes] = await Promise.all([
-      supa.from("memories").select("*")
-        .eq("room_code", room)
-        .gte("created_at", start)
-        .lte("created_at", end)
-        .order("created_at", { ascending: false })
-        .limit(120),
-
-      supa.from("checkins").select("*")
-        .eq("room_code", room)
-        .eq("checkin_date", SELECTED_DATE)
-        .order("created_at", { ascending: false })
-        .limit(120),
-
-      supa.from("reactions").select("*")
-        .eq("room_code", room)
-        .gte("created_at", start)
-        .lte("created_at", end)
-        .order("created_at", { ascending: false })
-        .limit(1200),
-
-      supa.from("signals").select("*")
-        .eq("room_code", room)
-        .eq("type", "pause")
-        .gte("created_at", start)
-        .lte("created_at", end)
-        .order("created_at", { ascending: false })
-        .limit(1),
+    const [memRes, chkRes, reactRes, pauseRes, bingoRes] = await Promise.all([
+      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
+      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
+      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
+      supa.from("signals").select("*").eq("room_code", room).eq("type", "pause").order("created_at", { ascending: false }).limit(1),
+      supa.from("signals").select("*").eq("room_code", room).eq("type", "bingo").order("created_at", { ascending: false }).limit(500),
     ]);
 
     if (memRes.error) throw memRes.error;
     if (chkRes.error) throw chkRes.error;
     if (reactRes.error) throw reactRes.error;
-    if (sigRes.error) throw sigRes.error;
+    if (pauseRes.error) throw pauseRes.error;
+    if (bingoRes.error) throw bingoRes.error;
 
     const memories = memRes.data || [];
-    const checkins = chkRes.data || [];
+    const checkinsToday = chkRes.data || [];
     const reactions = reactRes.data || [];
-    const pauseSignal = (sigRes.data && sigRes.data[0]) ? sigRes.data[0] : null;
+    const pauseSignal = (pauseRes.data && pauseRes.data[0]) ? pauseRes.data[0] : null;
 
-    const memoriesCount = memories.length;
+    const memoriesTodayCount = memories.filter(m => new Date(m.created_at).toDateString() === todayStr).length;
 
     const reactionsByMemory = {};
-    const reactionsCount = reactions.length;
+    let reactionsTodayCount = 0;
 
     for (const r of reactions) {
       const memId = String(r.memory_id);
       if (!reactionsByMemory[memId]) reactionsByMemory[memId] = { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
       if (reactionsByMemory[memId][r.emoji] !== undefined) reactionsByMemory[memId][r.emoji] += 1;
       reactionsByMemory[memId].total += 1;
+      if (new Date(r.created_at).toDateString() === todayStr) reactionsTodayCount += 1;
     }
 
-    updateDashboard(memoriesCount, checkins, reactionsCount);
-    updateMoodBoard(checkins);
-    updateAwards(memories, checkins, reactionsByMemory);
+    updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount);
+    updateMoodBoard(checkinsToday);
+    updateAwards(memories, reactionsByMemory);
+    loadMyMoodSelection(checkinsToday);
 
-    lastTipsPool = buildTipsPool(memoriesCount, checkins);
-    if (tipsOut && tipsOut.textContent.includes("Loading")) {
-      tipsOut.innerHTML = pickRandom(lastTipsPool, 3).map(tip => `<div style="margin:10px 0;">${escapeHtml(tip)}</div>`).join("");
-    }
-
-    loadMyMoodSelection(checkins);
     renderMission();
-
-    const { motd } = renderMOTD(memories, reactionsByMemory);
+    renderMOTD(memories, reactionsByMemory);
     renderPauseBanner(pauseSignal);
 
+    // Recap modal content
     recapModalKpis.innerHTML = recapOut.innerHTML;
     recapModalMotd.innerHTML = motdOut.innerHTML;
     recapModalAwards.innerHTML = awardsOut.innerHTML;
 
+    // Bingo render
+    bingoStatus.textContent = t("bingoLoading");
+    const card = buildBingoCard();
+    const bingoState = parseBingoSignals(bingoRes.data || []);
+    renderBingo(card, bingoState);
+    bingoStatus.textContent = "";
+
+    // Render memories only when changed (prevents flashing)
     const renderKey = memories
       .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
       .join("||");
@@ -1155,7 +1248,7 @@ async function loadAll() {
       }).join("");
     }
 
-    debug(`✅ Loaded ${SELECTED_DATE}.`);
+    debug("✅ Connected. Data loaded.");
   } catch (err) {
     debug("❌ Load error: " + (err?.message || String(err)));
   }
@@ -1163,8 +1256,5 @@ async function loadAll() {
 
 // Start
 applyLanguage();
-setReadOnlyUI();
-setInterval(() => {
-  loadAll();
-}, 5000);
+setInterval(() => loadAll(), 5000);
 loadAll();
