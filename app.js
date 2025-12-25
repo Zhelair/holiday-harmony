@@ -20,7 +20,7 @@ const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
 // ✅ TMDB key (free)
-const TMDB_API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjMmI3MGFmMmIyYTljNjczYjE0YmQyY2YxYmE4ZTBmMyIsIm5iZiI6MTc2NjY4MTAzNS4xOTI5OTk4LCJzdWIiOiI2OTRkNjljYmE2ZTY3NWZhNWEyZmI0NTQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.mZeoFP55YcDkM7t71gySOBxQiIrUYg2B2lA-Sn4SZ1Q";
+const TMDB_API_KEY = "c2b70af2b2a9c673b14bd2cf1ba8e0f3";
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
