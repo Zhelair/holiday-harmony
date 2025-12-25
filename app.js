@@ -1,9 +1,7 @@
 // ==========================
-// Holiday Harmony — app.js (FULL)
-// Includes: Memories + Reactions + MOTD + Awards + Dashboard + Vibe Bar + Pause
-// Mission + Activity + Chores + Reset Moment
-// Sound + Party ambience, EN/RU, Recap modal, Export card
-// Quick Tips replaced with Family Bingo (shared via signals)
+// Holiday Harmony — app.js (Full + Bingo 3x3 + TMDB Trending)
+// Keeps: MOTD, Awards, Reactions, Recap modal, Export, Mood check-in, Vibe bar,
+// Pause banner, Daily mission, Activity/Reset/Chores, EN/RU, Sounds.
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -17,8 +15,8 @@ if (!window.supabase || !window.supabase.createClient) {
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ PASTE REAL VALUES
-const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
+// ✅ PASTE YOUR REAL VALUES (ONLY HERE)
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
@@ -55,6 +53,7 @@ const kpiReactsEl = document.getElementById("kpiReacts");
 const defuseBtn = document.getElementById("defuseBtn");
 const choreBtn = document.getElementById("choreBtn");
 const pauseBtn = document.getElementById("pauseBtn");
+const activityBtn = document.getElementById("activityBtn");
 const defuseOut = document.getElementById("defuseOut");
 const activityOut = document.getElementById("activityOut");
 
@@ -63,6 +62,8 @@ const recapOut = document.getElementById("recapOut");
 
 const soundToggle = document.getElementById("soundToggle");
 const partyBtn = document.getElementById("partyBtn");
+
+const exportBtn = document.getElementById("exportBtn");
 
 const missionOut = document.getElementById("missionOut");
 const missionDoneBtn = document.getElementById("missionDoneBtn");
@@ -83,26 +84,14 @@ const recapModalKpis = document.getElementById("recapModalKpis");
 const recapModalMotd = document.getElementById("recapModalMotd");
 const recapModalAwards = document.getElementById("recapModalAwards");
 
-// Export
-const exportBtn = document.getElementById("exportBtn");
-const exportWrap = document.getElementById("exportWrap");
-const exportCard = document.getElementById("exportCard");
-const closeExportBtn = document.getElementById("closeExportBtn");
-const downloadCardBtn = document.getElementById("downloadCardBtn");
-const exportRoomEl = document.getElementById("exportRoom");
-const exportDateEl = document.getElementById("exportDate");
-const exportSubEl = document.getElementById("exportSub");
-const exportKpisEl = document.getElementById("exportKpis");
-const exportMotdEl = document.getElementById("exportMotd");
-const exportAwardsEl = document.getElementById("exportAwards");
-
 // Bingo
-const bingoTitle = document.getElementById("bingoTitle");
-const bingoHint = document.getElementById("bingoHint");
-const bingoResetBtn = document.getElementById("bingoResetBtn");
-const bingoStatus = document.getElementById("bingoStatus");
-const bingoGrid = document.getElementById("bingoGrid");
-const bingoWin = document.getElementById("bingoWin");
+const bingoGridEl = document.getElementById("bingoGrid");
+const bingoNewBtn = document.getElementById("bingoNewBtn");
+const bingoStatusEl = document.getElementById("bingoStatus");
+
+// TMDB
+const tmdbOut = document.getElementById("tmdbOut");
+const tmdbRefreshBtn = document.getElementById("tmdbRefreshBtn");
 
 // ---- helpers
 function escapeHtml(str) {
@@ -110,6 +99,7 @@ function escapeHtml(str) {
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
   }[s]));
 }
+
 function todayISODate() {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -117,22 +107,17 @@ function todayISODate() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
 function isSameLocalDay(isoOrTs) {
   const d = new Date(isoOrTs);
   return d.toDateString() === new Date().toDateString();
 }
+
 function fmtLocal(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
-function msToMmSs(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const mm = String(Math.floor(s / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
-}
 
-// --- Fix small typo if any browser chokes:
-function msToMmSs(ms){
+function msToMmSs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const mm = String(Math.floor(s / 60)).padStart(2,"0");
   const ss = String(s % 60).padStart(2,"0");
@@ -142,6 +127,7 @@ function msToMmSs(ms){
 function soundOn() {
   return soundToggle ? !!soundToggle.checked : true;
 }
+
 function tryPlayAudio(src, opts = {}) {
   if (!soundOn()) return null;
   try {
@@ -153,6 +139,7 @@ function tryPlayAudio(src, opts = {}) {
     return a;
   } catch { return null; }
 }
+
 function playSound(which) {
   if (!soundOn()) return;
   const map = {
@@ -161,7 +148,7 @@ function playSound(which) {
   };
   const src = map[which];
   if (!src) return;
-  tryPlayAudio(src, { volume: 0.9 });
+  tryPlayAudio(src, { volume: 0.95 });
 }
 
 // ---- ambience (LOUD)
@@ -171,7 +158,7 @@ partyBtn?.addEventListener("click", () => {
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.95;
+    ambienceAudio.volume = 0.95; // loud
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -185,6 +172,7 @@ soundToggle?.addEventListener("change", () => {
 // ---- remember name
 function getSavedName() { return localStorage.getItem("hh_name") || ""; }
 function setSavedName(v) { if (v) localStorage.setItem("hh_name", v); }
+
 (function initIdentity(){
   const n = getSavedName();
   if (n && nameEl) nameEl.value = n;
@@ -211,10 +199,9 @@ const DEVICE_ID = ensureDeviceId();
 const i18n = {
   en: {
     soundLabel:"🔊 Sound",
-    recapBtn:"📸 Recap",
-    exportBtn:"🖼 Export",
     motdTitle:"⭐ Memory of the Day",
     motdHint:"Most loved memory today (by reactions).",
+    recapBtn:"📸 Recap",
     recapTitle:"📸 Today’s Recap",
     recapHowto:"How to share:",
     recapHowtoText:"Take a screenshot and send it to the family chat 🙂",
@@ -265,25 +252,16 @@ const i18n = {
     awardsNone:"No awards yet.",
     motdEmpty:"No memories yet today. Add the first warm moment ✨",
 
-    badMemoryId:"Bad memory id (not a number): ",
-    reactSelectErr:"REACTION SELECT ERROR:\n",
-    reactInsertErr:"REACTION INSERT ERROR:\n",
-    reactDeleteErr:"REACTION DELETE ERROR:\n",
+    tmdbNeedKey:"TMDB key not set yet (paste it in app.js).",
+    tmdbErr:"TMDB error: ",
 
-    bingoTitle:"🎯 Family Bingo",
-    bingoHint:"Tap squares together. Complete a line = Bingo!",
-    bingoNew:"🔄 New card (today)",
-    bingoDoneBy:"Done by",
-    bingoWinner:"🎉 BINGO!",
-    bingoWinnerText:"Line completed. Screenshot-worthy moment.",
-    bingoLoading:"Loading Bingo…",
+    bingoWin:"🎉 Bingo!",
   },
   ru: {
     soundLabel:"🔊 Звук",
-    recapBtn:"📸 Итог",
-    exportBtn:"🖼 Экспорт",
     motdTitle:"⭐ Момент дня",
     motdHint:"Самый любимый момент сегодня (по реакциям).",
+    recapBtn:"📸 Итог",
     recapTitle:"📸 Итог дня",
     recapHowto:"Как поделиться:",
     recapHowtoText:"Сделайте скриншот и отправьте в семейный чат 🙂",
@@ -334,18 +312,10 @@ const i18n = {
     awardsNone:"Пока нет наград.",
     motdEmpty:"Сегодня ещё нет моментов. Добавьте первый тёплый момент ✨",
 
-    badMemoryId:"Плохой id (не число): ",
-    reactSelectErr:"ОШИБКА SELECT реакций:\n",
-    reactInsertErr:"ОШИБКА INSERT реакций:\n",
-    reactDeleteErr:"ОШИБКА DELETE реакций:\n",
+    tmdbNeedKey:"TMDB ключ не задан (вставьте в app.js).",
+    tmdbErr:"Ошибка TMDB: ",
 
-    bingoTitle:"🎯 Семейное Бинго",
-    bingoHint:"Отмечайте вместе. Линия = БИНГО!",
-    bingoNew:"🔄 Новая карточка (сегодня)",
-    bingoDoneBy:"Отметил(а)",
-    bingoWinner:"🎉 БИНГО!",
-    bingoWinnerText:"Линия собрана. Самое время для скриншота.",
-    bingoLoading:"Загружаю бинго…",
+    bingoWin:"🎉 Бинго!",
   }
 };
 
@@ -356,10 +326,9 @@ function t(key){ return (i18n[LANG] && i18n[LANG][key]) || i18n.en[key] || key; 
 
 function applyLanguage(){
   document.getElementById("soundLabel").textContent = t("soundLabel");
-  recapBtn.textContent = t("recapBtn");
-  exportBtn.textContent = t("exportBtn");
   document.getElementById("motdTitle").textContent = t("motdTitle");
   document.getElementById("motdHint").textContent = t("motdHint");
+  recapBtn.textContent = t("recapBtn");
   document.getElementById("recapTitle").textContent = t("recapTitle");
   document.getElementById("recapHowto").textContent = t("recapHowto");
   document.getElementById("recapHowtoText").textContent = t("recapHowtoText");
@@ -377,14 +346,12 @@ function applyLanguage(){
   tagSelect.options[5].textContent = t("tagGifts");
   tagSelect.options[6].textContent = t("tagKids");
 
-  // Bingo
-  bingoTitle.textContent = t("bingoTitle");
-  bingoHint.textContent = t("bingoHint");
-  bingoResetBtn.textContent = t("bingoNew");
-
   renderMission();
+  renderBingo();     // keep bingo text aligned with language
+  loadTMDBTrending();// refresh TMDB label text if no key
   loadAll();
 }
+
 langBtn?.addEventListener("click", () => {
   playSound("tap");
   LANG = (LANG === "en") ? "ru" : "en";
@@ -441,31 +408,19 @@ function pools() {
         "Ты отдыхаешь — заслужил(а) 😌",
         "Ты выбираешь фильм 🎬"
       ],
-      bingo: [
-        "Сказать искренний комплимент",
-        "Сделать чай/кофе кому-то",
-        "Сфоткаться вместе (хоть селфи)",
-        "Посмеяться над семейной историей",
-        "10 минут прогулки",
-        "Помочь на кухне",
-        "Поставить музыку и подпеть",
-        "Спросить: «Как ты реально?»",
-        "Посмотреть 10 минут старых фото",
-        "Сказать «Спасибо» (вслух)",
-        "Сделать маленькую уборку 5 минут",
-        "Дать кому-то выиграть спор 😄",
-        "Обнять/пожать руку (по желанию)",
-        "Сыграть в мини-игру",
-        "Сказать «Я рад(а), что мы вместе»",
-        "Не обсуждать тяжёлые темы 30 минут",
-        "Вместе выбрать фильм",
-        "Похвалить еду",
-        "Сделать смешную семейную фразу дня",
-        "Принести перекус/фрукт",
-        "Поделиться приятным воспоминанием",
-        "Сделать добро молча",
-        "Сказать «Давай без напряжения»",
-        "Сфоткать уютный момент",
+      bingoPool: [
+        "Общий смех за столом",
+        "Чай/кофе пауза",
+        "Кто-то похвалил еду",
+        "Сказали «а помнишь…»",
+        "Сфоткались вместе",
+        "Кто-то помог на кухне",
+        "Выбрали фильм/музыку",
+        "Настолка/пазл",
+        "Тёплые слова/объятие",
+        "Кто-то уступил/согласился",
+        "Шутка зашла 😄",
+        "Кто-то предложил прогулку"
       ]
     };
   }
@@ -514,31 +469,19 @@ function pools() {
       "You rest — you earned it 😌",
       "You pick the movie 🎬"
     ],
-    bingo: [
-      "Give a sincere compliment",
-      "Make tea/coffee for someone",
-      "Take a group photo (even a selfie)",
-      "Laugh at a family story",
-      "10-minute walk",
-      "Help in the kitchen",
-      "Play a song and sing along",
-      "Ask: “How are you really?”",
-      "Look at old photos for 10 min",
-      "Say “Thank you” out loud",
-      "5-minute tidy sprint",
-      "Let someone win an argument 😄",
-      "Hug/handshake (optional)",
-      "Play a tiny game",
-      "Say “I’m glad we’re together”",
-      "No heavy topics for 30 min",
-      "Pick a movie together",
-      "Compliment the food",
-      "Create a funny phrase of the day",
-      "Bring a snack/fruit",
-      "Share one warm memory",
-      "Do a kind thing quietly",
-      "Say “let’s keep it light”",
-      "Snap a cozy moment",
+    bingoPool: [
+      "Shared laugh at the table",
+      "Tea/coffee break",
+      "Someone complimented the food",
+      "A “remember when…” story",
+      "Group photo happened",
+      "Someone helped in the kitchen",
+      "Picked a movie/music",
+      "Board game / puzzle",
+      "Warm words / hug",
+      "Someone compromised",
+      "A joke landed 😄",
+      "Someone suggested a walk"
     ]
   };
 }
@@ -589,7 +532,7 @@ renderMission();
 // ==========================
 // Activity / Reset / Chores
 // ==========================
-document.getElementById("activityBtn")?.addEventListener("click", () => {
+activityBtn?.addEventListener("click", () => {
   playSound("tap");
   const { activities } = pools();
   const pick = activities[Math.floor(Math.random() * activities.length)];
@@ -625,7 +568,7 @@ async function sendPause() {
   playSound("success");
   await loadAll();
 }
-pauseBtn?.addEventListener("click", () => sendPause());
+pauseBtn?.addEventListener("click", sendPause);
 
 // ==========================
 // Mood check-in
@@ -685,7 +628,7 @@ async function toggleReaction(memoryIdRaw, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
   const memIdNum = Number(memoryIdRaw);
   if (!Number.isFinite(memIdNum)) {
-    alert(t("badMemoryId") + memoryIdRaw);
+    alert("Bad memory id: " + memoryIdRaw);
     return;
   }
   playSound("tap");
@@ -699,21 +642,22 @@ async function toggleReaction(memoryIdRaw, emoji) {
     .eq("device_id", DEVICE_ID)
     .limit(1);
 
-  if (selErr) { alert(t("reactSelectErr") + selErr.message); return; }
+  if (selErr) { alert("Reaction select error: " + selErr.message); return; }
 
   if (existing && existing.length) {
     const { error: delErr } = await supa.from("reactions").delete().eq("id", existing[0].id);
-    if (delErr) { alert(t("reactDeleteErr") + delErr.message); return; }
+    if (delErr) { alert("Reaction delete error: " + delErr.message); return; }
   } else {
     const { error: insErr } = await supa.from("reactions").insert([{
       room_code: room, memory_id: memIdNum, emoji, name, device_id: DEVICE_ID
     }]);
-    if (insErr) { alert(t("reactInsertErr") + insErr.message); return; }
+    if (insErr) { alert("Reaction insert error: " + insErr.message); return; }
   }
 
   playSound("success");
   await loadAll();
 }
+
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest(".reactBtn");
   if (!btn) return;
@@ -747,9 +691,35 @@ async function postMemory() {
   momentEl.value = "";
   statusEl.textContent = t("posted");
   playSound("success");
+  await microConfetti();
   await loadAll();
 }
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
+
+// ==========================
+// Micro-confetti (tiny celebration, no libs)
+// ==========================
+async function microConfetti() {
+  // super tiny + safe; uses emoji bursts near top
+  const burst = document.createElement("div");
+  burst.style.position = "fixed";
+  burst.style.left = "50%";
+  burst.style.top = "14px";
+  burst.style.transform = "translateX(-50%)";
+  burst.style.zIndex = "99999";
+  burst.style.pointerEvents = "none";
+  burst.style.fontSize = "18px";
+  burst.style.filter = "drop-shadow(0 10px 10px rgba(0,0,0,.08))";
+  burst.textContent = "✨ 🎉 ✨";
+  document.body.appendChild(burst);
+  burst.animate(
+    [{ opacity: 0, transform: "translateX(-50%) translateY(-6px)" },
+     { opacity: 1, transform: "translateX(-50%) translateY(0px)" },
+     { opacity: 0, transform: "translateX(-50%) translateY(10px)" }],
+    { duration: 850, easing: "ease" }
+  );
+  setTimeout(() => burst.remove(), 900);
+}
 
 // ==========================
 // Vibe bar + pulse
@@ -781,6 +751,18 @@ function setVibeBar(percent, vibeText) {
   }
 }
 
+function summarizeMood(checkinsToday) {
+  const counts = { good: 0, ok: 0, bad: 0 };
+  for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
+  let vibe = t("vibeNoCheckins");
+  if (checkinsToday.length > 0) {
+    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
+    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
+    else vibe = t("vibeOkay");
+  }
+  return { counts, vibe };
+}
+
 function updateMoodBoard(checkinsToday) {
   if (!moodBoardEl) return;
   if (checkinsToday.length === 0) {
@@ -798,18 +780,6 @@ function updateMoodBoard(checkinsToday) {
         </div>
       `).join("")}
   `;
-}
-
-function summarizeMood(checkinsToday) {
-  const counts = { good: 0, ok: 0, bad: 0 };
-  for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
-  let vibe = t("vibeNoCheckins");
-  if (checkinsToday.length > 0) {
-    if (counts.bad >= Math.max(counts.good, counts.ok)) vibe = t("vibeOver");
-    else if (counts.good >= Math.max(counts.ok, counts.bad)) vibe = t("vibeCalm");
-    else vibe = t("vibeOkay");
-  }
-  return { counts, vibe };
 }
 
 function updateAwards(memories, reactionsByMemory) {
@@ -941,223 +911,161 @@ modalBack?.addEventListener("click", (e) => {
 });
 
 // ==========================
-// Export Card (PNG)
+// Export (simple: opens recap modal and suggests screenshot)
 // ==========================
-function exportDateLabel() {
-  try { return new Date().toLocaleDateString(); } catch { return todayISODate(); }
-}
-function stripHeavy(html) {
-  return String(html || "")
-    .replace(/<button[\s\S]*?<\/button>/g, "");
-}
-function openExportCard() {
+exportBtn?.addEventListener("click", () => {
   playSound("tap");
-  exportRoomEl.textContent = "🏠 " + room;
-  exportDateEl.textContent = exportDateLabel();
-  exportSubEl.textContent = (LANG === "ru") ? "Итог дня (карточка)" : "Today recap (card)";
-
-  exportKpisEl.innerHTML = stripHeavy(recapOut.innerHTML);
-  exportMotdEl.innerHTML = stripHeavy(motdOut.innerHTML);
-  exportAwardsEl.innerHTML = stripHeavy(awardsOut.innerHTML);
-
-  exportWrap.style.display = "flex";
-}
-function closeExportCard() {
-  exportWrap.style.display = "none";
-}
-exportBtn?.addEventListener("click", openExportCard);
-closeExportBtn?.addEventListener("click", closeExportCard);
-exportWrap?.addEventListener("click", (e) => {
-  if (e.target === exportWrap) closeExportCard();
-});
-downloadCardBtn?.addEventListener("click", async () => {
-  playSound("tap");
-  if (!window.html2canvas) {
-    alert("html2canvas not loaded.");
-    return;
-  }
-  const scale = Math.min(2, window.devicePixelRatio || 1);
-
-  const canvas = await window.html2canvas(exportCard, {
-    backgroundColor: "#ffffff",
-    scale,
-    useCORS: true
-  });
-
-  const link = document.createElement("a");
-  link.download = `holiday-harmony-${room}-${todayISODate()}.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-  playSound("success");
+  modalBack.style.display = "flex";
 });
 
 // ==========================
-// Bingo (shared via signals)
+// Bingo 3x3 (local per room/day)
 // ==========================
-function seededShuffle(arr, seedStr) {
-  const a = [...arr];
-  let seed = hashStringToInt(seedStr) || 1;
-  function rand() {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
+const BINGO_SIZE = 3;
+
+function getBingoKey() {
+  return `hh_bingo_${room}_${todayISODate()}`;
+}
+
+function buildBingoItems() {
+  const pool = pools().bingoPool || [];
+  const copy = [...pool];
+  const out = [];
+  while (copy.length && out.length < (BINGO_SIZE * BINGO_SIZE)) {
+    out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
   }
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+  // fallback if pool too small
+  while (out.length < 9) out.push(LANG==="ru" ? "Тёплый момент" : "Warm moment");
+  return out;
 }
-function bingoStorageKey() {
-  return `hh_bingo_seed_${room}_${todayISODate()}`;
-}
-function getBingoSeed() {
-  return localStorage.getItem(bingoStorageKey()) || "";
-}
-function setBingoSeed(v) {
-  localStorage.setItem(bingoStorageKey(), v);
-}
-function buildBingoCard() {
-  const { bingo } = pools();
-  const seed = getBingoSeed() || `${room}|${todayISODate()}|base`;
-  const picked = seededShuffle(bingo, seed).slice(0, 24);
-  const card = [];
-  for (let i = 0; i < 25; i++) {
-    if (i === 12) card.push({ key: "free", text: (LANG === "ru") ? "⭐ СВОБОДНО" : "⭐ FREE", free: true });
-    else {
-      const idx = i < 12 ? i : i - 1;
-      card.push({ key: `b${idx}`, text: picked[idx], free: false });
-    }
+
+function ensureBingoCard() {
+  const key = getBingoKey();
+  let card = null;
+  try { card = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
+  if (!card || !Array.isArray(card.items) || card.items.length !== 9) {
+    card = { items: buildBingoItems(), on: Array(9).fill(false) };
+    localStorage.setItem(key, JSON.stringify(card));
   }
   return card;
 }
-async function pushBingoToggle(tileKey, done) {
-  const name = ((nameEl?.value || getSavedName()) || "Someone").trim() || "Someone";
-  const payload = {
-    date: todayISODate(),
-    key: tileKey,
-    done: !!done,
-    by: name
-  };
-  const { error } = await supa.from("signals").insert([{
-    room_code: room,
-    type: "bingo",
-    payload: JSON.stringify(payload)
-  }]);
-  if (error) throw error;
-}
-function parseBingoSignals(signals) {
-  const state = {};
-  for (const s of (signals || [])) {
-    let p = null;
-    try { p = JSON.parse(s.payload || "{}"); } catch { p = null; }
-    if (!p || p.date !== todayISODate() || !p.key) continue;
-    const ts = new Date(s.created_at).getTime();
-    if (!state[p.key] || ts > state[p.key].ts) {
-      state[p.key] = { done: !!p.done, by: p.by || "", ts };
-    }
-  }
-  state["free"] = { done: true, by: "", ts: Date.now() };
-  return state;
-}
-function computeBingoWin(doneMap) {
-  const idxToKey = (n) => (n === 12) ? "free" : `b${n < 12 ? n : n - 1}`;
-  const lines = [];
-  for (let r = 0; r < 5; r++) {
-    const row = [];
-    for (let c = 0; c < 5; c++) row.push(idxToKey(r * 5 + c));
-    lines.push(row);
-  }
-  for (let c = 0; c < 5; c++) {
-    const col = [];
-    for (let r = 0; r < 5; r++) col.push(idxToKey(r * 5 + c));
-    lines.push(col);
-  }
-  lines.push([idxToKey(0), idxToKey(6), idxToKey(12), idxToKey(18), idxToKey(24)]);
-  lines.push([idxToKey(4), idxToKey(8), idxToKey(12), idxToKey(16), idxToKey(20)]);
-  for (const line of lines) {
-    if (line.every(k => doneMap[k] === true)) return true;
-  }
-  return false;
-}
-function microConfetti() {
-  const emojis = ["🎉","✨","⭐","🎊","💛"];
-  for (let i = 0; i < 14; i++) {
-    const el = document.createElement("div");
-    el.className = "confetti";
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    el.style.setProperty("--dx", `${(Math.random() * 240 - 120).toFixed(0)}px`);
-    el.style.setProperty("--dy", `${(Math.random() * 120).toFixed(0)}px`);
-    el.style.setProperty("--rot", `${(Math.random() * 120 - 60).toFixed(0)}deg`);
-    el.style.left = `${(Math.random() * 70 + 15).toFixed(0)}%`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1000);
-  }
-}
-let lastBingoWon = false;
-function renderBingo(card, state) {
-  if (!bingoGrid) return;
 
-  const doneMap = {};
-  for (const k in state) doneMap[k] = !!state[k].done;
+function checkBingoWin(on, size) {
+  const idx = (r,c)=> r*size + c;
 
-  const won = computeBingoWin(doneMap);
+  for (let r=0;r<size;r++){
+    let ok=true;
+    for (let c=0;c<size;c++) if (!on[idx(r,c)]) ok=false;
+    if (ok) return true;
+  }
+  for (let c=0;c<size;c++){
+    let ok=true;
+    for (let r=0;r<size;r++) if (!on[idx(r,c)]) ok=false;
+    if (ok) return true;
+  }
+  let d1=true, d2=true;
+  for (let i=0;i<size;i++){
+    if (!on[idx(i,i)]) d1=false;
+    if (!on[idx(i,size-1-i)]) d2=false;
+  }
+  return d1 || d2;
+}
 
-  bingoGrid.innerHTML = card.map(tile => {
-    const st = state[tile.key];
-    const done = tile.free ? true : !!st?.done;
-    const by = st?.by ? ` • ${t("bingoDoneBy")}: ${escapeHtml(st.by)}` : "";
-    const cls = `bingoTile ${done ? "bingoDone" : ""} ${tile.free ? "bingoFree" : ""}`;
-
-    return `
-      <div class="${cls}" data-bkey="${tile.key}">
-        <div>
-          <div>${escapeHtml(tile.text)}</div>
-          <small style="opacity:.7;">${done && !tile.free ? by : ""}</small>
-        </div>
-      </div>
-    `;
+function renderBingo() {
+  if (!bingoGridEl) return;
+  const card = ensureBingoCard();
+  bingoGridEl.innerHTML = card.items.map((text, i) => {
+    const cls = card.on[i] ? "bingoCell on" : "bingoCell";
+    return `<div class="${cls}" data-i="${i}">${escapeHtml(text)}</div>`;
   }).join("");
 
-  if (won) {
-    bingoWin.innerHTML = `
-      <div class="bingoWinBox">
-        <b>${escapeHtml(t("bingoWinner"))}</b><br>
-        <small>${escapeHtml(t("bingoWinnerText"))}</small>
-      </div>
-    `;
-    if (!lastBingoWon) microConfetti();
-  } else {
-    bingoWin.innerHTML = "";
-  }
-  lastBingoWon = won;
+  const win = checkBingoWin(card.on, BINGO_SIZE);
+  if (bingoStatusEl) bingoStatusEl.textContent = win ? t("bingoWin") : "";
 }
-bingoResetBtn?.addEventListener("click", () => {
-  playSound("tap");
-  setBingoSeed(`${room}|${todayISODate()}|${Math.random().toString(16).slice(2)}`);
-  playSound("success");
-  loadAll();
-});
-bingoGrid?.addEventListener("click", async (e) => {
-  const tile = e.target.closest(".bingoTile");
-  if (!tile) return;
-  const key = tile.getAttribute("data-bkey");
-  if (!key || key === "free") return;
 
-  const name = (nameEl.value || "").trim();
-  if (!name) return alert(t("pleaseName"));
+document.addEventListener("click", (e) => {
+  const cell = e.target.closest(".bingoCell");
+  if (!cell) return;
+  const i = Number(cell.getAttribute("data-i"));
+  if (!Number.isFinite(i)) return;
+  const key = getBingoKey();
+  const card = ensureBingoCard();
+  card.on[i] = !card.on[i];
+  localStorage.setItem(key, JSON.stringify(card));
+  renderBingo();
+  playSound("tap");
+});
+
+bingoNewBtn?.addEventListener("click", () => {
+  const key = getBingoKey();
+  const card = { items: buildBingoItems(), on: Array(9).fill(false) };
+  localStorage.setItem(key, JSON.stringify(card));
+  renderBingo();
+  playSound("success");
+});
+
+renderBingo();
+
+// ==========================
+// TMDB Trending (client-side simple)
+// ==========================
+// ✅ Optional: paste your TMDB key here later.
+// If empty, it just shows a friendly message.
+const TMDB_API_KEY = "PASTE_YOUR_TMDB_API_KEY";
+const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
+
+async function loadTMDBTrending() {
+  if (!tmdbOut) return;
+
+  if (!TMDB_API_KEY || TMDB_API_KEY.includes("PASTE_")) {
+    tmdbOut.innerHTML = `<small>${escapeHtml(t("tmdbNeedKey"))}</small>`;
+    return;
+  }
+
+  tmdbOut.innerHTML = `<small>Loading trending…</small>`;
 
   try {
-    playSound("tap");
-    bingoStatus.textContent = t("saving");
-    const isDone = tile.classList.contains("bingoDone");
-    await pushBingoToggle(key, !isDone);
-    playSound("success");
-    bingoStatus.textContent = "";
-    await loadAll();
-  } catch (err) {
-    bingoStatus.textContent = "Error: " + (err?.message || String(err));
+    const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${encodeURIComponent(TMDB_API_KEY)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`TMDB HTTP ${res.status}`);
+    const json = await res.json();
+
+    const items = (json.results || []).slice(0, 10);
+
+    tmdbOut.innerHTML = `
+      <div class="tmdbRow">
+        ${items.map(m => {
+          const title = m.title || m.name || "Untitled";
+          const year = (m.release_date || "").slice(0,4);
+          const rating = (typeof m.vote_average === "number") ? m.vote_average.toFixed(1) : "—";
+          const poster = m.poster_path ? (TMDB_IMG + m.poster_path) : "";
+
+          return `
+            <div class="tmdbCard">
+              ${poster
+                ? `<img class="tmdbPoster" src="${poster}" alt="${escapeHtml(title)}">`
+                : `<div class="tmdbPoster" style="display:flex;align-items:center;justify-content:center;"><small>No poster</small></div>`
+              }
+              <div class="tmdbMeta">
+                <b>${escapeHtml(title)}</b>
+                <small>${escapeHtml(year)} • ⭐ ${escapeHtml(rating)}</small>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } catch (e) {
+    tmdbOut.innerHTML = `<small>${escapeHtml(t("tmdbErr"))}${escapeHtml(String(e.message || e))}</small>`;
   }
+}
+
+tmdbRefreshBtn?.addEventListener("click", () => {
+  playSound("tap");
+  loadTMDBTrending();
 });
+
+loadTMDBTrending();
 
 // ==========================
 // Load + render (no blinking)
@@ -1169,24 +1077,22 @@ async function loadAll() {
     const today = todayISODate();
     const todayStr = new Date().toDateString();
 
-    const [memRes, chkRes, reactRes, pauseRes, bingoRes] = await Promise.all([
-      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
-      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
-      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
+    const [memRes, chkRes, reactRes, sigRes] = await Promise.all([
+      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(120),
+      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(120),
+      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(800),
       supa.from("signals").select("*").eq("room_code", room).eq("type", "pause").order("created_at", { ascending: false }).limit(1),
-      supa.from("signals").select("*").eq("room_code", room).eq("type", "bingo").order("created_at", { ascending: false }).limit(500),
     ]);
 
     if (memRes.error) throw memRes.error;
     if (chkRes.error) throw chkRes.error;
     if (reactRes.error) throw reactRes.error;
-    if (pauseRes.error) throw pauseRes.error;
-    if (bingoRes.error) throw bingoRes.error;
+    if (sigRes.error) throw sigRes.error;
 
     const memories = memRes.data || [];
     const checkinsToday = chkRes.data || [];
     const reactions = reactRes.data || [];
-    const pauseSignal = (pauseRes.data && pauseRes.data[0]) ? pauseRes.data[0] : null;
+    const pauseSignal = (sigRes.data && sigRes.data[0]) ? sigRes.data[0] : null;
 
     const memoriesTodayCount = memories.filter(m => new Date(m.created_at).toDateString() === todayStr).length;
 
@@ -1204,25 +1110,19 @@ async function loadAll() {
     updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount);
     updateMoodBoard(checkinsToday);
     updateAwards(memories, reactionsByMemory);
-    loadMyMoodSelection(checkinsToday);
 
+    loadMyMoodSelection(checkinsToday);
     renderMission();
+    renderBingo();
     renderMOTD(memories, reactionsByMemory);
     renderPauseBanner(pauseSignal);
 
-    // Recap modal content
+    // Recap modal mirrors current content
     recapModalKpis.innerHTML = recapOut.innerHTML;
     recapModalMotd.innerHTML = motdOut.innerHTML;
     recapModalAwards.innerHTML = awardsOut.innerHTML;
 
-    // Bingo render
-    bingoStatus.textContent = t("bingoLoading");
-    const card = buildBingoCard();
-    const bingoState = parseBingoSignals(bingoRes.data || []);
-    renderBingo(card, bingoState);
-    bingoStatus.textContent = "";
-
-    // Render memories only when changed (prevents flashing)
+    // Render feed only when changed (prevents blinking)
     const renderKey = memories
       .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
       .join("||");
@@ -1256,5 +1156,5 @@ async function loadAll() {
 
 // Start
 applyLanguage();
-setInterval(() => loadAll(), 5000);
 loadAll();
+setInterval(loadAll, 5000);
