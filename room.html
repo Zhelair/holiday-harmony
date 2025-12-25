@@ -307,6 +307,21 @@
       background:#fff;
       margin-top: 10px;
     }
+
+    .tmdbLink{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      text-decoration:none;
+      color: var(--text);
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 999px;
+      padding:8px 12px;
+      font-weight:900;
+      width:auto;
+    }
   </style>
 </head>
 
@@ -323,6 +338,13 @@
       <button id="recapBtn" type="button">📸 Recap</button>
       <button id="exportBtn" type="button">🧾 Export</button>
       <button id="langBtn" type="button">EN / RU</button>
+
+      <span style="margin-left:6px; font-weight:800;">📅</span>
+      <input id="datePick" type="date" style="width:auto;">
+      <button id="btnToday" type="button">Today</button>
+      <button id="btnYday" type="button">Yesterday</button>
+      <button id="btn7" type="button">Last 7</button>
+      <button id="btn30" type="button">Last 30</button>
     </div>
   </div>
 
@@ -494,6 +516,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=501"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+  <script src="app.js?v=999"></script>
 </body>
 </html>
