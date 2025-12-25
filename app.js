@@ -1,7 +1,7 @@
 // ==========================
-// Holiday Harmony — app.js (Full + Bingo 3x3 + TMDB Trending)
-// Keeps: MOTD, Awards, Reactions, Recap modal, Export, Mood check-in, Vibe bar,
-// Pause banner, Daily mission, Activity/Reset/Chores, EN/RU, Sounds.
+// Holiday Harmony — app.js
+// Keeps: memories + reactions + mood + dashboard + pause + recap + export + bingo + chores/activities/defuse + EN/RU
+// Adds: Movie Night (TMDB trending + shared Supabase votes)
 // ==========================
 
 const debugEl = document.getElementById("debug");
@@ -15,9 +15,12 @@ if (!window.supabase || !window.supabase.createClient) {
   throw new Error("Supabase UMD not available");
 }
 
-// ✅ PASTE YOUR REAL VALUES (ONLY HERE)
+// ✅ PASTE REAL VALUES (Supabase)
 const SUPABASE_URL = "https://ubthnjsdxuhjyjnrxube.supabase.co";
 const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidGhuanNkeHVoanlqbnJ4dWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Njc1OTIsImV4cCI6MjA4MjE0MzU5Mn0.zOUuQErKK2sOhIbmG2OVbwBkuUe3TfrEEGBlH7-dE_g";
+
+// ✅ TMDB key (free)
+const TMDB_API_KEY = "PASTE_YOUR_TMDB_API_KEY";
 
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
@@ -53,7 +56,6 @@ const kpiReactsEl = document.getElementById("kpiReacts");
 const defuseBtn = document.getElementById("defuseBtn");
 const choreBtn = document.getElementById("choreBtn");
 const pauseBtn = document.getElementById("pauseBtn");
-const activityBtn = document.getElementById("activityBtn");
 const defuseOut = document.getElementById("defuseOut");
 const activityOut = document.getElementById("activityOut");
 
@@ -62,8 +64,6 @@ const recapOut = document.getElementById("recapOut");
 
 const soundToggle = document.getElementById("soundToggle");
 const partyBtn = document.getElementById("partyBtn");
-
-const exportBtn = document.getElementById("exportBtn");
 
 const missionOut = document.getElementById("missionOut");
 const missionDoneBtn = document.getElementById("missionDoneBtn");
@@ -75,6 +75,7 @@ const vibeBarEl = document.getElementById("vibeBar");
 const langBtn = document.getElementById("langBtn");
 
 const motdOut = document.getElementById("motdOut");
+
 const pauseBanner = document.getElementById("pauseBanner");
 
 const recapBtn = document.getElementById("recapBtn");
@@ -84,14 +85,17 @@ const recapModalKpis = document.getElementById("recapModalKpis");
 const recapModalMotd = document.getElementById("recapModalMotd");
 const recapModalAwards = document.getElementById("recapModalAwards");
 
-// Bingo
-const bingoGridEl = document.getElementById("bingoGrid");
-const bingoNewBtn = document.getElementById("bingoNewBtn");
-const bingoStatusEl = document.getElementById("bingoStatus");
+const exportBtn = document.getElementById("exportBtn");
 
-// TMDB
-const tmdbOut = document.getElementById("tmdbOut");
-const tmdbRefreshBtn = document.getElementById("tmdbRefreshBtn");
+// Bingo
+const bingoOut = document.getElementById("bingoOut");
+
+// Movie Night
+const movieGridEl = document.getElementById("movieGrid");
+const movieTopPickEl = document.getElementById("movieTopPick");
+const movieStatusEl = document.getElementById("movieStatus");
+const movieReloadBtn = document.getElementById("movieReloadBtn");
+const movieExportBtn = document.getElementById("movieExportBtn");
 
 // ---- helpers
 function escapeHtml(str) {
@@ -99,7 +103,6 @@ function escapeHtml(str) {
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
   }[s]));
 }
-
 function todayISODate() {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -107,16 +110,13 @@ function todayISODate() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
-
 function isSameLocalDay(isoOrTs) {
   const d = new Date(isoOrTs);
   return d.toDateString() === new Date().toDateString();
 }
-
 function fmtLocal(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
-
 function msToMmSs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const mm = String(Math.floor(s / 60)).padStart(2,"0");
@@ -124,10 +124,10 @@ function msToMmSs(ms) {
   return `${mm}:${ss}`;
 }
 
+// ---- sounds
 function soundOn() {
   return soundToggle ? !!soundToggle.checked : true;
 }
-
 function tryPlayAudio(src, opts = {}) {
   if (!soundOn()) return null;
   try {
@@ -139,7 +139,6 @@ function tryPlayAudio(src, opts = {}) {
     return a;
   } catch { return null; }
 }
-
 function playSound(which) {
   if (!soundOn()) return;
   const map = {
@@ -158,7 +157,7 @@ partyBtn?.addEventListener("click", () => {
   if (!ambienceAudio) {
     ambienceAudio = new Audio("assets/sounds/ambience.mp3");
     ambienceAudio.loop = true;
-    ambienceAudio.volume = 0.95; // loud
+    ambienceAudio.volume = 0.95;
     ambienceAudio.addEventListener("error", () => {});
   }
   if (!soundOn()) { ambienceAudio.pause(); return; }
@@ -172,7 +171,6 @@ soundToggle?.addEventListener("change", () => {
 // ---- remember name
 function getSavedName() { return localStorage.getItem("hh_name") || ""; }
 function setSavedName(v) { if (v) localStorage.setItem("hh_name", v); }
-
 (function initIdentity(){
   const n = getSavedName();
   if (n && nameEl) nameEl.value = n;
@@ -182,7 +180,7 @@ nameEl?.addEventListener("input", () => {
   if (name) setSavedName(name);
 });
 
-// ---- device id (for reactions)
+// ---- device id (for reactions + movie votes)
 function ensureDeviceId() {
   let id = localStorage.getItem("hh_device_id");
   if (!id) {
@@ -212,12 +210,6 @@ const i18n = {
     pauseBannerText:"10 minutes. Tea/water. No heavy topics. We’re on the same team.",
     pauseRemaining:"Remaining",
 
-    tagFood:"🍽 Food",
-    tagFunny:"😂 Funny",
-    tagMovie:"🎬 Movie",
-    tagTea:"☕ Tea",
-    tagGifts:"🎁 Gifts",
-    tagKids:"🧸 Kids",
     tagNone:"(no tag)",
     post:"Post memory",
 
@@ -252,10 +244,14 @@ const i18n = {
     awardsNone:"No awards yet.",
     motdEmpty:"No memories yet today. Add the first warm moment ✨",
 
-    tmdbNeedKey:"TMDB key not set yet (paste it in app.js).",
-    tmdbErr:"TMDB error: ",
-
-    bingoWin:"🎉 Bingo!",
+    movieTitle:"🍿 Movie Night (Vote)",
+    movieHint:"Tap 👍 to vote. Tap again to unvote. Everyone sees the same winner.",
+    movieTop:"Top pick tonight:",
+    movieNoKey:"TMDB key not set yet (paste it in app.js).",
+    movieLoading:"Loading trending movies…",
+    movieVotes:"votes",
+    movieYouVoted:"You voted",
+    movieExport:"Movie Night Card copied to clipboard ✅"
   },
   ru: {
     soundLabel:"🔊 Звук",
@@ -272,12 +268,6 @@ const i18n = {
     pauseBannerText:"10 минут. Чай/вода. Без тяжёлых тем. Мы одна команда.",
     pauseRemaining:"Осталось",
 
-    tagFood:"🍽 Еда",
-    tagFunny:"😂 Смешно",
-    tagMovie:"🎬 Фильм",
-    tagTea:"☕ Чай",
-    tagGifts:"🎁 Подарки",
-    tagKids:"🧸 Дети",
     tagNone:"(без тега)",
     post:"Добавить момент",
 
@@ -312,10 +302,14 @@ const i18n = {
     awardsNone:"Пока нет наград.",
     motdEmpty:"Сегодня ещё нет моментов. Добавьте первый тёплый момент ✨",
 
-    tmdbNeedKey:"TMDB ключ не задан (вставьте в app.js).",
-    tmdbErr:"Ошибка TMDB: ",
-
-    bingoWin:"🎉 Бинго!",
+    movieTitle:"🍿 Кино-вечер (голосуем)",
+    movieHint:"Жми 👍 чтобы голосовать. Жми ещё раз — убрать голос. Победителя видят все.",
+    movieTop:"Лидер вечера:",
+    movieNoKey:"TMDB ключ не задан (вставь в app.js).",
+    movieLoading:"Загружаю тренды…",
+    movieVotes:"голосов",
+    movieYouVoted:"Твой голос",
+    movieExport:"Карточка кино-вечера скопирована ✅"
   }
 };
 
@@ -338,20 +332,18 @@ function applyLanguage(){
   document.getElementById("postBtn").textContent = t("post");
 
   // tags
-  tagSelect.options[0].textContent = t("tagNone");
-  tagSelect.options[1].textContent = t("tagFood");
-  tagSelect.options[2].textContent = t("tagFunny");
-  tagSelect.options[3].textContent = t("tagMovie");
-  tagSelect.options[4].textContent = t("tagTea");
-  tagSelect.options[5].textContent = t("tagGifts");
-  tagSelect.options[6].textContent = t("tagKids");
+  const opts = tagSelect?.options;
+  if (opts && opts[0]) opts[0].textContent = t("tagNone");
+
+  // movie
+  const movieTitle = document.getElementById("movieTitle");
+  const movieHint = document.getElementById("movieHint");
+  if (movieTitle) movieTitle.textContent = t("movieTitle");
+  if (movieHint) movieHint.textContent = t("movieHint");
 
   renderMission();
-  renderBingo();     // keep bingo text aligned with language
-  loadTMDBTrending();// refresh TMDB label text if no key
   loadAll();
 }
-
 langBtn?.addEventListener("click", () => {
   playSound("tap");
   LANG = (LANG === "en") ? "ru" : "en";
@@ -360,7 +352,7 @@ langBtn?.addEventListener("click", () => {
 });
 
 // ==========================
-// Pools
+// Pools (EN/RU)
 // ==========================
 function pools() {
   if (LANG === "ru") {
@@ -372,55 +364,27 @@ function pools() {
         "Спросите: «Что было лучшим сегодня?»",
         "Сделайте одно маленькое доброе дело молча 😄",
         "10 минут прогулки вместе (без тяжёлых тем).",
-        "Каждый рассказывает одну смешную историю из детства.",
-        "Сделайте что-то на кухне вместе.",
-        "Сделайте одну смешную семейную фотку.",
-        "Каждый предлагает фильм — потом голосуем."
       ],
       activities: [
         "«Две правды и одна ложь» — по кругу",
         "Выбор фильма: каждый предлагает один вариант, потом голосуем",
         "10 минут прогулки (без тяжёлых тем)",
         "Чай + сладкое: каждый говорит одно хорошее за день",
-        "Фото-челлендж: повторить старое семейное фото",
-        "Мини-викторина: «кто это сказал?» (семейные фразы)",
         "Пазл/настолка на 20 минут",
-        "Командная кухня: один режет, один мешает, один пробует",
-        "5 минут уборки под музыку",
-        "История дня: каждый делится одним тёплым воспоминанием"
       ],
       defuse: [
         "Пауза: 3 медленных вдоха. Потом — мягче голос 🙂",
-        "Мини-перерыв: вода + улыбка. Команда «семья» снова онлайн.",
-        "Сменить сцену: чай/прогулка/уютная активность на 10 минут.",
+        "Сменить сцену: чай/прогулка на 10 минут.",
         "Круг комплиментов: по одному искреннему предложению.",
-        "Режим юмора: скажите претензию как злодей из мультфильма.",
         "Мирная взятка: принесите перекус. Перекус решает многое.",
-        "Сначала доброта, потом правота. Работает странно хорошо."
       ],
       chores: [
         "Ты моешь посуду 🫧",
         "Ты вытираешь посуду 🍽️",
         "Ты накрываешь на стол 🧂",
-        "Ты выбираешь музыку 🎵",
         "Ты делаешь чай ☕",
         "Ты 5 минут убираешься 🧹",
         "Ты отдыхаешь — заслужил(а) 😌",
-        "Ты выбираешь фильм 🎬"
-      ],
-      bingoPool: [
-        "Общий смех за столом",
-        "Чай/кофе пауза",
-        "Кто-то похвалил еду",
-        "Сказали «а помнишь…»",
-        "Сфоткались вместе",
-        "Кто-то помог на кухне",
-        "Выбрали фильм/музыку",
-        "Настолка/пазл",
-        "Тёплые слова/объятие",
-        "Кто-то уступил/согласился",
-        "Шутка зашла 😄",
-        "Кто-то предложил прогулку"
       ]
     };
   }
@@ -433,55 +397,27 @@ function pools() {
       "Ask someone: ‘What was the best part of your day?’",
       "Do one small helpful thing without announcing it 😄",
       "Take a 10-minute walk together (no heavy topics).",
-      "Everyone shares one funny childhood memory.",
-      "Kitchen teamwork: make one thing together.",
-      "Photo moment: take a goofy group selfie.",
-      "Movie vote: everyone suggests 1 title, then vote."
     ],
     activities: [
       "2 Truths and a Lie (one round each)",
       "Pick a movie: everyone suggests 1 title, then vote",
       "10-minute walk together (no big topics — just fresh air 😄)",
       "Tea + dessert: each person says one good thing from today",
-      "Photo challenge: recreate an old family photo pose",
-      "Mini quiz: 'Who said this?' (family quotes edition)",
       "Puzzle/board game for 20 minutes",
-      "Kitchen teamwork: one person chops, one stirs, one tastes",
-      "Quick tidy sprint: 5 minutes with music",
-      "Story time: each person shares one warm memory"
     ],
     defuse: [
       "Reset moment: 3 slow breaths. Then softer voices. 🙂",
-      "Quick pause: water + a small smile. Team ‘family’ is back online.",
       "Switch scene: tea, a short walk, or a cozy activity. Keep it light for 10 minutes.",
       "Compliment round: one sincere sentence each.",
-      "Humor mode: say your complaint like a Disney villain.",
       "Peace offering: bring a snack. Snacks solve many mysteries.",
-      "Kind first, correct later. Works weirdly well."
     ],
     chores: [
       "You wash dishes 🫧",
       "You dry dishes 🍽️",
       "You set the table 🧂",
-      "You choose music 🎵",
       "You make tea ☕",
       "You do a 5-minute tidy sprint 🧹",
       "You rest — you earned it 😌",
-      "You pick the movie 🎬"
-    ],
-    bingoPool: [
-      "Shared laugh at the table",
-      "Tea/coffee break",
-      "Someone complimented the food",
-      "A “remember when…” story",
-      "Group photo happened",
-      "Someone helped in the kitchen",
-      "Picked a movie/music",
-      "Board game / puzzle",
-      "Warm words / hug",
-      "Someone compromised",
-      "A joke landed 😄",
-      "Someone suggested a walk"
     ]
   };
 }
@@ -532,7 +468,7 @@ renderMission();
 // ==========================
 // Activity / Reset / Chores
 // ==========================
-activityBtn?.addEventListener("click", () => {
+document.getElementById("activityBtn")?.addEventListener("click", () => {
   playSound("tap");
   const { activities } = pools();
   const pick = activities[Math.floor(Math.random() * activities.length)];
@@ -568,7 +504,7 @@ async function sendPause() {
   playSound("success");
   await loadAll();
 }
-pauseBtn?.addEventListener("click", sendPause);
+pauseBtn?.addEventListener("click", () => sendPause());
 
 // ==========================
 // Mood check-in
@@ -622,7 +558,7 @@ function loadMyMoodSelection(checkinsToday) {
 }
 
 // ==========================
-// Reactions
+// Reactions (memories)
 // ==========================
 async function toggleReaction(memoryIdRaw, emoji) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
@@ -642,22 +578,21 @@ async function toggleReaction(memoryIdRaw, emoji) {
     .eq("device_id", DEVICE_ID)
     .limit(1);
 
-  if (selErr) { alert("Reaction select error: " + selErr.message); return; }
+  if (selErr) { alert("Reaction select error:\n" + selErr.message); return; }
 
   if (existing && existing.length) {
     const { error: delErr } = await supa.from("reactions").delete().eq("id", existing[0].id);
-    if (delErr) { alert("Reaction delete error: " + delErr.message); return; }
+    if (delErr) { alert("Reaction delete error:\n" + delErr.message); return; }
   } else {
     const { error: insErr } = await supa.from("reactions").insert([{
       room_code: room, memory_id: memIdNum, emoji, name, device_id: DEVICE_ID
     }]);
-    if (insErr) { alert("Reaction insert error: " + insErr.message); return; }
+    if (insErr) { alert("Reaction insert error:\n" + insErr.message); return; }
   }
 
   playSound("success");
   await loadAll();
 }
-
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest(".reactBtn");
   if (!btn) return;
@@ -677,7 +612,6 @@ async function postMemory() {
     statusEl.textContent = t("fillNameMoment");
     return;
   }
-
   if (tag) moment = `${tag} ${moment}`;
 
   playSound("tap");
@@ -691,35 +625,9 @@ async function postMemory() {
   momentEl.value = "";
   statusEl.textContent = t("posted");
   playSound("success");
-  await microConfetti();
   await loadAll();
 }
 document.getElementById("postBtn")?.addEventListener("click", postMemory);
-
-// ==========================
-// Micro-confetti (tiny celebration, no libs)
-// ==========================
-async function microConfetti() {
-  // super tiny + safe; uses emoji bursts near top
-  const burst = document.createElement("div");
-  burst.style.position = "fixed";
-  burst.style.left = "50%";
-  burst.style.top = "14px";
-  burst.style.transform = "translateX(-50%)";
-  burst.style.zIndex = "99999";
-  burst.style.pointerEvents = "none";
-  burst.style.fontSize = "18px";
-  burst.style.filter = "drop-shadow(0 10px 10px rgba(0,0,0,.08))";
-  burst.textContent = "✨ 🎉 ✨";
-  document.body.appendChild(burst);
-  burst.animate(
-    [{ opacity: 0, transform: "translateX(-50%) translateY(-6px)" },
-     { opacity: 1, transform: "translateX(-50%) translateY(0px)" },
-     { opacity: 0, transform: "translateX(-50%) translateY(10px)" }],
-    { duration: 850, easing: "ease" }
-  );
-  setTimeout(() => burst.remove(), 900);
-}
 
 // ==========================
 // Vibe bar + pulse
@@ -751,6 +659,15 @@ function setVibeBar(percent, vibeText) {
   }
 }
 
+// ==========================
+// Dashboard + awards + MOTD + pause banner
+// ==========================
+function pickRandom(arr, count = 3) {
+  const copy = [...arr];
+  const out = [];
+  while (copy.length && out.length < count) out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+  return out;
+}
 function summarizeMood(checkinsToday) {
   const counts = { good: 0, ok: 0, bad: 0 };
   for (const c of checkinsToday) if (counts[c.mood] !== undefined) counts[c.mood]++;
@@ -762,7 +679,6 @@ function summarizeMood(checkinsToday) {
   }
   return { counts, vibe };
 }
-
 function updateMoodBoard(checkinsToday) {
   if (!moodBoardEl) return;
   if (checkinsToday.length === 0) {
@@ -781,7 +697,6 @@ function updateMoodBoard(checkinsToday) {
       `).join("")}
   `;
 }
-
 function updateAwards(memories, reactionsByMemory) {
   if (!awardsOut) return;
 
@@ -806,7 +721,6 @@ function updateAwards(memories, reactionsByMemory) {
       ${awards.length ? awards.map(a => `<div style="margin:8px 0;">${a}</div>`).join("") : `<small>${escapeHtml(t("awardsNone"))}</small>`}
     </div>`;
 }
-
 function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount) {
   const { counts, vibe } = summarizeMood(checkinsToday);
 
@@ -837,10 +751,6 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
     <small>${escapeHtml(t("recapFooter"))}</small>
   `;
 }
-
-// ==========================
-// Memory of the Day (most reactions today)
-// ==========================
 function renderMOTD(memories, reactionsByMemory) {
   const todays = memories.filter(m => isSameLocalDay(m.created_at));
   if (!todays.length) {
@@ -866,16 +776,11 @@ function renderMOTD(memories, reactionsByMemory) {
   `;
   return { motd: best };
 }
-
-// ==========================
-// Pause banner rendering
-// ==========================
 function renderPauseBanner(latestPauseSignal) {
   if (!latestPauseSignal) {
     pauseBanner.style.display = "none";
     return;
   }
-
   const created = new Date(latestPauseSignal.created_at).getTime();
   const now = Date.now();
   const durationMs = 10 * 60 * 1000;
@@ -911,161 +816,272 @@ modalBack?.addEventListener("click", (e) => {
 });
 
 // ==========================
-// Export (simple: opens recap modal and suggests screenshot)
+// Export (simple text card)
 // ==========================
-exportBtn?.addEventListener("click", () => {
+exportBtn?.addEventListener("click", async () => {
   playSound("tap");
-  modalBack.style.display = "flex";
+  const txt = `Holiday Harmony — ${room}\nDate: ${todayISODate()}\n\n${recapOut?.innerText || ""}\n\nTip: screenshot the Recap too 🙂`;
+  try {
+    await navigator.clipboard.writeText(txt);
+    alert("Export copied ✅");
+  } catch {
+    alert(txt);
+  }
 });
 
 // ==========================
-// Bingo 3x3 (local per room/day)
+// Bingo (3x3 simple co-op, local per device)
 // ==========================
-const BINGO_SIZE = 3;
-
-function getBingoKey() {
-  return `hh_bingo_${room}_${todayISODate()}`;
+function bingoKey(){ return `hh_bingo_${room}_${todayISODate()}_${LANG}`; }
+function getBingoPool(){
+  return (LANG==="ru")
+    ? ["Кто-то сказал «ну я же говорил»","Чай появился","Смеялись вместе","Кто-то предложил фильм","Кто-то помог на кухне","Обнялись/похлопали","Старое фото/воспоминание","Все сели вместе","Кто-то сказал комплимент"]
+    : ["Someone said “I told you so”","Tea appeared","We laughed together","Someone suggested a movie","Someone helped in kitchen","Hug / friendly pat","Old memory shared","Everyone sat together","Someone gave a compliment"];
 }
-
-function buildBingoItems() {
-  const pool = pools().bingoPool || [];
-  const copy = [...pool];
-  const out = [];
-  while (copy.length && out.length < (BINGO_SIZE * BINGO_SIZE)) {
-    out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
-  }
-  // fallback if pool too small
-  while (out.length < 9) out.push(LANG==="ru" ? "Тёплый момент" : "Warm moment");
-  return out;
-}
-
-function ensureBingoCard() {
-  const key = getBingoKey();
-  let card = null;
-  try { card = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
-  if (!card || !Array.isArray(card.items) || card.items.length !== 9) {
-    card = { items: buildBingoItems(), on: Array(9).fill(false) };
-    localStorage.setItem(key, JSON.stringify(card));
-  }
-  return card;
-}
-
-function checkBingoWin(on, size) {
-  const idx = (r,c)=> r*size + c;
-
-  for (let r=0;r<size;r++){
-    let ok=true;
-    for (let c=0;c<size;c++) if (!on[idx(r,c)]) ok=false;
-    if (ok) return true;
-  }
-  for (let c=0;c<size;c++){
-    let ok=true;
-    for (let r=0;r<size;r++) if (!on[idx(r,c)]) ok=false;
-    if (ok) return true;
-  }
-  let d1=true, d2=true;
-  for (let i=0;i<size;i++){
-    if (!on[idx(i,i)]) d1=false;
-    if (!on[idx(i,size-1-i)]) d2=false;
-  }
-  return d1 || d2;
-}
-
-function renderBingo() {
-  if (!bingoGridEl) return;
-  const card = ensureBingoCard();
-  bingoGridEl.innerHTML = card.items.map((text, i) => {
-    const cls = card.on[i] ? "bingoCell on" : "bingoCell";
-    return `<div class="${cls}" data-i="${i}">${escapeHtml(text)}</div>`;
+function renderBingo(){
+  if (!bingoOut) return;
+  const pool = getBingoPool();
+  const saved = JSON.parse(localStorage.getItem(bingoKey()) || "[]");
+  const cells = pool.map((txt, i) => {
+    const on = saved.includes(i);
+    return `
+      <button type="button" data-bi="${i}"
+        style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:${on ? "#eafff2" : "#fff"}; font-weight:800;">
+        ${escapeHtml(txt)}
+      </button>`;
   }).join("");
-
-  const win = checkBingoWin(card.on, BINGO_SIZE);
-  if (bingoStatusEl) bingoStatusEl.textContent = win ? t("bingoWin") : "";
+  bingoOut.innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">${cells}</div>`;
 }
-
-document.addEventListener("click", (e) => {
-  const cell = e.target.closest(".bingoCell");
-  if (!cell) return;
-  const i = Number(cell.getAttribute("data-i"));
-  if (!Number.isFinite(i)) return;
-  const key = getBingoKey();
-  const card = ensureBingoCard();
-  card.on[i] = !card.on[i];
-  localStorage.setItem(key, JSON.stringify(card));
-  renderBingo();
+bingoOut?.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-bi]");
+  if (!btn) return;
   playSound("tap");
-});
-
-bingoNewBtn?.addEventListener("click", () => {
-  const key = getBingoKey();
-  const card = { items: buildBingoItems(), on: Array(9).fill(false) };
-  localStorage.setItem(key, JSON.stringify(card));
+  const i = Number(btn.getAttribute("data-bi"));
+  const saved = JSON.parse(localStorage.getItem(bingoKey()) || "[]");
+  const idx = saved.indexOf(i);
+  if (idx >= 0) saved.splice(idx,1); else saved.push(i);
+  localStorage.setItem(bingoKey(), JSON.stringify(saved));
   renderBingo();
-  playSound("success");
 });
-
 renderBingo();
 
 // ==========================
-// TMDB Trending (client-side simple)
+// Movie Night (TMDB + Supabase votes)
 // ==========================
-// ✅ Optional: paste your TMDB key here later.
-// If empty, it just shows a friendly message.
-const TMDB_API_KEY = "PASTE_YOUR_TMDB_API_KEY";
-const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
+const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w342";
 
-async function loadTMDBTrending() {
-  if (!tmdbOut) return;
+function tmdbLang() {
+  return (LANG === "ru") ? "ru-RU" : "en-US";
+}
 
+async function fetchTrendingMovies() {
   if (!TMDB_API_KEY || TMDB_API_KEY.includes("PASTE_")) {
-    tmdbOut.innerHTML = `<small>${escapeHtml(t("tmdbNeedKey"))}</small>`;
+    if (movieTopPickEl) movieTopPickEl.innerHTML = `<b>${escapeHtml(t("movieNoKey"))}</b>`;
+    if (movieGridEl) movieGridEl.innerHTML = "";
+    return [];
+  }
+  if (movieStatusEl) movieStatusEl.textContent = t("movieLoading");
+
+  const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${encodeURIComponent(TMDB_API_KEY)}&language=${encodeURIComponent(tmdbLang())}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("TMDB error: " + res.status);
+  const json = await res.json();
+  return (json.results || []).slice(0, 12); // keep it light
+}
+
+async function loadMovieVotesToday() {
+  const vote_date = todayISODate();
+  const { data, error } = await supa
+    .from("movie_votes")
+    .select("*")
+    .eq("room_code", room)
+    .eq("vote_date", vote_date)
+    .limit(2000);
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function toggleMovieVote(movie) {
+  const name = ((nameEl.value || getSavedName()) || "Someone").trim();
+  const vote_date = todayISODate();
+
+  playSound("tap");
+
+  // Is there already a vote by this device for this movie today?
+  const { data: existing, error: selErr } = await supa
+    .from("movie_votes")
+    .select("id")
+    .eq("room_code", room)
+    .eq("vote_date", vote_date)
+    .eq("movie_id", movie.id)
+    .eq("device_id", DEVICE_ID)
+    .limit(1);
+
+  if (selErr) throw selErr;
+
+  if (existing && existing.length) {
+    const { error: delErr } = await supa.from("movie_votes").delete().eq("id", existing[0].id);
+    if (delErr) throw delErr;
+  } else {
+    const { error: insErr } = await supa.from("movie_votes").insert([{
+      room_code: room,
+      vote_date,
+      movie_id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path || null,
+      name,
+      device_id: DEVICE_ID
+    }]);
+    if (insErr) throw insErr;
+  }
+
+  playSound("success");
+  await loadMoviesAndRender();
+}
+
+function buildVoteMap(votes) {
+  const byMovie = {}; // movie_id => count
+  const mine = new Set(); // movie_id voted by this device
+  for (const v of votes) {
+    byMovie[v.movie_id] = (byMovie[v.movie_id] || 0) + 1;
+    if (v.device_id === DEVICE_ID) mine.add(v.movie_id);
+  }
+  return { byMovie, mine };
+}
+
+function renderTopPick(movies, votes) {
+  if (!movieTopPickEl) return;
+
+  const { byMovie } = buildVoteMap(votes);
+  let best = null;
+
+  for (const m of movies) {
+    const c = byMovie[m.id] || 0;
+    if (!best || c > best.count) best = { movie: m, count: c };
+  }
+
+  if (!best || best.count === 0) {
+    movieTopPickEl.innerHTML = `<b>${escapeHtml(t("movieTop"))}</b> <small>${escapeHtml(LANG==="ru" ? "пока нет голосов — жми 👍" : "no votes yet — tap 👍")}</small>`;
     return;
   }
 
-  tmdbOut.innerHTML = `<small>Loading trending…</small>`;
-
-  try {
-    const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${encodeURIComponent(TMDB_API_KEY)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`TMDB HTTP ${res.status}`);
-    const json = await res.json();
-
-    const items = (json.results || []).slice(0, 10);
-
-    tmdbOut.innerHTML = `
-      <div class="tmdbRow">
-        ${items.map(m => {
-          const title = m.title || m.name || "Untitled";
-          const year = (m.release_date || "").slice(0,4);
-          const rating = (typeof m.vote_average === "number") ? m.vote_average.toFixed(1) : "—";
-          const poster = m.poster_path ? (TMDB_IMG + m.poster_path) : "";
-
-          return `
-            <div class="tmdbCard">
-              ${poster
-                ? `<img class="tmdbPoster" src="${poster}" alt="${escapeHtml(title)}">`
-                : `<div class="tmdbPoster" style="display:flex;align-items:center;justify-content:center;"><small>No poster</small></div>`
-              }
-              <div class="tmdbMeta">
-                <b>${escapeHtml(title)}</b>
-                <small>${escapeHtml(year)} • ⭐ ${escapeHtml(rating)}</small>
-              </div>
-            </div>
-          `;
-        }).join("")}
+  const poster = best.movie.poster_path ? `${TMDB_POSTER_BASE}${best.movie.poster_path}` : "";
+  movieTopPickEl.innerHTML = `
+    <b>${escapeHtml(t("movieTop"))}</b>
+    <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+      ${poster ? `<img src="${poster}" alt="" style="width:64px; border-radius:12px; border:1px solid #e7e7ef;">` : ""}
+      <div>
+        <b>${escapeHtml(best.movie.title)}</b><br>
+        <small>👍 ${best.count} ${escapeHtml(t("movieVotes"))}</small>
       </div>
-    `;
-  } catch (e) {
-    tmdbOut.innerHTML = `<small>${escapeHtml(t("tmdbErr"))}${escapeHtml(String(e.message || e))}</small>`;
-  }
+    </div>
+  `;
 }
 
-tmdbRefreshBtn?.addEventListener("click", () => {
-  playSound("tap");
-  loadTMDBTrending();
+function renderMovies(movies, votes) {
+  if (!movieGridEl) return;
+
+  const { byMovie, mine } = buildVoteMap(votes);
+
+  movieGridEl.innerHTML = movies.map(m => {
+    const poster = m.poster_path ? `${TMDB_POSTER_BASE}${m.poster_path}` : "";
+    const count = byMovie[m.id] || 0;
+    const iVoted = mine.has(m.id);
+
+    return `
+      <div class="movieCard" data-mid="${m.id}">
+        ${poster ? `<img class="moviePoster" src="${poster}" alt="${escapeHtml(m.title)}">` : `<div class="moviePoster"></div>`}
+        <div class="movieMeta">
+          <b>${escapeHtml(m.title)}</b>
+          <small>👍 ${count} ${escapeHtml(t("movieVotes"))} ${iVoted ? " • ✅ " + escapeHtml(t("movieYouVoted")) : ""}</small>
+          <div class="movieActions">
+            <button class="movieVoteBtn" type="button" data-vote="${m.id}">👍 Vote</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (movieStatusEl) movieStatusEl.textContent = "";
+}
+
+movieGridEl?.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-vote]");
+  if (!btn) return;
+
+  const id = Number(btn.getAttribute("data-vote"));
+  const movie = (window.__hh_movies || []).find(x => x.id === id);
+  if (!movie) return;
+
+  try {
+    await toggleMovieVote(movie);
+  } catch (err) {
+    alert("Movie vote error: " + (err?.message || String(err)));
+  }
 });
 
-loadTMDBTrending();
+movieReloadBtn?.addEventListener("click", async () => {
+  playSound("tap");
+  await loadMoviesAndRender(true);
+});
+
+movieExportBtn?.addEventListener("click", async () => {
+  playSound("tap");
+  const movies = window.__hh_movies || [];
+  const votes = window.__hh_movieVotes || [];
+  const { byMovie } = buildVoteMap(votes);
+
+  let best = null;
+  for (const m of movies) {
+    const c = byMovie[m.id] || 0;
+    if (!best || c > best.count) best = { movie: m, count: c };
+  }
+
+  const lines = [];
+  lines.push(`🍿 Movie Night — Room ${room}`);
+  lines.push(`Date: ${todayISODate()}`);
+  lines.push("");
+  if (best && best.count > 0) {
+    lines.push(`Top pick: ${best.movie.title} (👍 ${best.count})`);
+  } else {
+    lines.push(LANG==="ru" ? "Пока нет голосов — выберите фильм 🙂" : "No votes yet — pick a movie 🙂");
+  }
+  lines.push("");
+  lines.push(LANG==="ru" ? "Голоса:" : "Votes:");
+  const ranking = movies
+    .map(m => ({ m, c: byMovie[m.id] || 0 }))
+    .filter(x => x.c > 0)
+    .sort((a,b)=>b.c-a.c)
+    .slice(0, 6);
+
+  if (!ranking.length) lines.push(LANG==="ru" ? "—" : "—");
+  for (const r of ranking) lines.push(`• ${r.m.title} — 👍 ${r.c}`);
+
+  const txt = lines.join("\n");
+  try {
+    await navigator.clipboard.writeText(txt);
+    alert(t("movieExport"));
+  } catch {
+    alert(txt);
+  }
+});
+
+async function loadMoviesAndRender(forceRefetch = false) {
+  try {
+    if (forceRefetch || !window.__hh_movies || !window.__hh_movies.length) {
+      const movies = await fetchTrendingMovies();
+      window.__hh_movies = movies;
+    }
+    const votes = await loadMovieVotesToday();
+    window.__hh_movieVotes = votes;
+
+    renderTopPick(window.__hh_movies, votes);
+    renderMovies(window.__hh_movies, votes);
+  } catch (err) {
+    if (movieStatusEl) movieStatusEl.textContent = "Movie error: " + (err?.message || String(err));
+  }
+}
 
 // ==========================
 // Load + render (no blinking)
@@ -1078,9 +1094,9 @@ async function loadAll() {
     const todayStr = new Date().toDateString();
 
     const [memRes, chkRes, reactRes, sigRes] = await Promise.all([
-      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(120),
-      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(120),
-      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(800),
+      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
+      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
+      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
       supa.from("signals").select("*").eq("room_code", room).eq("type", "pause").order("created_at", { ascending: false }).limit(1),
     ]);
 
@@ -1113,16 +1129,16 @@ async function loadAll() {
 
     loadMyMoodSelection(checkinsToday);
     renderMission();
-    renderBingo();
+
     renderMOTD(memories, reactionsByMemory);
     renderPauseBanner(pauseSignal);
 
-    // Recap modal mirrors current content
+    // Recap modal mirrors current values
     recapModalKpis.innerHTML = recapOut.innerHTML;
     recapModalMotd.innerHTML = motdOut.innerHTML;
     recapModalAwards.innerHTML = awardsOut.innerHTML;
 
-    // Render feed only when changed (prevents blinking)
+    // Render memories only when changed
     const renderKey = memories
       .map(m => `${m.id}|${m.created_at}|${reactionsByMemory[String(m.id)]?.total || 0}`)
       .join("||");
@@ -1148,6 +1164,9 @@ async function loadAll() {
       }).join("");
     }
 
+    // Movies (separate load)
+    await loadMoviesAndRender(false);
+
     debug("✅ Connected. Data loaded.");
   } catch (err) {
     debug("❌ Load error: " + (err?.message || String(err)));
@@ -1157,4 +1176,4 @@ async function loadAll() {
 // Start
 applyLanguage();
 loadAll();
-setInterval(loadAll, 5000);
+setInterval(loadAll, 6000);
