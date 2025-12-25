@@ -124,10 +124,10 @@ function isSameLocalDay(isoOrTs) {
 function fmtLocal(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
-function (ms) {
+function msToMmSs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
-  const mm = String(Math.floor(s / 60)).padStart(2,"0");
-  const ss = String(s % 60)).padStart(2,"0");
+  const mm = String(Math.floor(s / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
   return `${mm}:${ss}`;
 }
 
