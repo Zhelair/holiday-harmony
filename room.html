@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Holiday Harmony — Room</title>
 
+  <link rel="icon" href="data:,">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -254,29 +256,66 @@
       background: #fafafe;
     }
 
-    /* ---- Micro confetti ---- */
-    .confetti {
-      position: fixed;
-      z-index: 9999;
-      pointer-events: none;
-      border-radius: 3px;
-      opacity: 0.95;
-      animation: confetti-fall 900ms ease-out forwards;
+    /* ---- Bingo ---- */
+    .bingoGrid{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
     }
-    @keyframes confetti-fall {
-      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(140px) rotate(280deg); opacity: 0; }
+    @media (max-width: 560px){
+      .bingoGrid{ gap:8px; }
+    }
+    .bingoTile{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:16px;
+      padding:12px 10px;
+      min-height:74px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+      user-select:none;
+      line-height:1.15;
+    }
+    .bingoTile:hover{
+      box-shadow: 0 12px 28px rgba(0,0,0,.10);
+      transform: translateY(-1px);
+    }
+    .bingoTile:active{ transform: translateY(1px); }
+    .bingoDone{
+      background: linear-gradient(135deg, rgba(184,240,208,.9), rgba(214,255,233,.9));
+      border-color: rgba(60,120,90,.25);
+    }
+    .bingoFree{
+      background: linear-gradient(135deg, rgba(255,231,179,.9), rgba(255,242,214,.9));
+    }
+    .bingoWinBox{
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
     }
 
-    /* ---- Lookback row ---- */
-    .lookRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
+    /* ---- Micro confetti ---- */
+    .confetti{
+      position: fixed;
+      left: 50%;
+      top: -10px;
+      transform: translateX(-50%);
+      z-index: 999999;
+      pointer-events:none;
+      font-size: 18px;
+      animation: confettiFall 900ms ease-out forwards;
     }
-    .lookRow button{ width:auto; margin:0; padding:10px 12px; border-radius:999px; }
-    .lookRow input{ width:auto; margin:0; padding:10px 12px; border-radius:999px; }
+    @keyframes confettiFall{
+      0%   { opacity:0; transform: translate(-50%, -20px) scale(.9); }
+      10%  { opacity:1; }
+      100% { opacity:0; transform: translate(calc(-50% + var(--dx)), calc(240px + var(--dy))) rotate(var(--rot)) scale(1.2); }
+    }
   </style>
 </head>
 
@@ -299,19 +338,6 @@
   <div class="pill" id="debug">Booting…</div>
 
   <div id="pauseBanner" class="pauseBanner"></div>
-
-  <!-- ✅ NEW: Lookback -->
-  <div class="card">
-    <h3 style="margin:0 0 8px;">📅 Lookback</h3>
-    <div class="lookRow">
-      <button id="btnToday" type="button">Today</button>
-      <button id="btnYesterday" type="button">Yesterday</button>
-      <button id="btn7" type="button">Last 7</button>
-      <button id="btn30" type="button">Last 30</button>
-      <input id="historyDate" type="date" />
-    </div>
-    <small id="historyStatus"></small>
-  </div>
 
   <div class="card">
     <h2 id="appTitle" style="margin:0;">Holiday Harmony</h2>
@@ -416,11 +442,18 @@
       </div>
     </div>
 
+    <!-- Quick Tips replaced with Bingo -->
     <div class="card">
-      <h3 id="tipsTitle">📌 Quick Tips</h3>
-      <button id="newTipBtn" type="button">Give me a tip</button>
-      <div id="tipsOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">Loading…</div>
-      <small id="tipsHint">Short prompts to keep the vibe warm.</small>
+      <h3 id="bingoTitle">🎯 Family Bingo</h3>
+      <small id="bingoHint">Tap squares together. Complete a line = Bingo!</small>
+
+      <div style="margin-top:10px;">
+        <button id="bingoResetBtn" type="button">🔄 New card (today)</button>
+      </div>
+
+      <div id="bingoStatus" style="margin-top:10px;"></div>
+      <div id="bingoGrid" class="bingoGrid" style="margin-top:12px;"></div>
+      <div id="bingoWin" style="margin-top:12px;"></div>
     </div>
   </div>
 
@@ -460,52 +493,51 @@
     </div>
   </div>
 
-<!-- Export Card (hidden) -->
-<div id="exportWrap" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:14px; z-index:99999;">
-  <div id="exportCard" style="width:min(760px, 100%); border-radius:24px; background:#fff; border:1px solid #e7e7ef; box-shadow:0 18px 70px rgba(0,0,0,.25); overflow:hidden;">
-    <div style="padding:18px 18px 12px; background:linear-gradient(135deg, rgba(255,231,179,.9), rgba(214,255,233,.9));">
-      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-        <div>
-          <div style="font-weight:900; font-size:18px;">Holiday Harmony</div>
-          <div id="exportSub" style="opacity:.85; margin-top:4px;">Room recap</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-weight:900;" id="exportRoom">Room</div>
-          <div style="opacity:.8; font-size:13px;" id="exportDate">Date</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="padding:16px 18px;">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
-          <b id="exportKpisTitle">Today</b>
-          <div id="exportKpis" style="margin-top:8px;">Loading…</div>
-        </div>
-        <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
-          <b id="exportMotdTitle">Memory of the Day</b>
-          <div id="exportMotd" style="margin-top:8px;">Loading…</div>
+  <!-- Export Card (hidden) -->
+  <div id="exportWrap" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:14px; z-index:99999;">
+    <div id="exportCard" style="width:min(760px, 100%); border-radius:24px; background:#fff; border:1px solid #e7e7ef; box-shadow:0 18px 70px rgba(0,0,0,.25); overflow:hidden;">
+      <div style="padding:18px 18px 12px; background:linear-gradient(135deg, rgba(255,231,179,.9), rgba(214,255,233,.9));">
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+          <div>
+            <div style="font-weight:900; font-size:18px;">Holiday Harmony</div>
+            <div id="exportSub" style="opacity:.85; margin-top:4px;">Room recap</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:900;" id="exportRoom">Room</div>
+            <div style="opacity:.8; font-size:13px;" id="exportDate">Date</div>
+          </div>
         </div>
       </div>
 
-      <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
-        <b id="exportAwardsTitle">Awards</b>
-        <div id="exportAwards" style="margin-top:8px;">Loading…</div>
-      </div>
+      <div style="padding:16px 18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+            <b id="exportKpisTitle">Today</b>
+            <div id="exportKpis" style="margin-top:8px;">Loading…</div>
+          </div>
+          <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+            <b id="exportMotdTitle">Memory of the Day</b>
+            <div id="exportMotd" style="margin-top:8px;">Loading…</div>
+          </div>
+        </div>
 
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button id="downloadCardBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">⬇ Download PNG</button>
-        <button id="closeExportBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">✖ Close</button>
-      </div>
+        <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+          <b id="exportAwardsTitle">Awards</b>
+          <div id="exportAwards" style="margin-top:8px;">Loading…</div>
+        </div>
 
-      <small style="display:block; margin-top:10px; opacity:.7;">Tip: after download, share it in the family chat 🙂</small>
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="downloadCardBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">⬇ Download PNG</button>
+          <button id="closeExportBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">✖ Close</button>
+        </div>
+
+        <small style="display:block; margin-top:10px; opacity:.7;">Tip: after download, share it in the family chat 🙂</small>
+      </div>
     </div>
   </div>
-</div>
-  
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="app.js?v=300"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="app.js?v=400"></script>
 </body>
 </html>
