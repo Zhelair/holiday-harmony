@@ -1163,18 +1163,6 @@ movieGridEl?.addEventListener("click", async (e) => {
     await openTrailer(id);
   }
 });
-  if (!btn) return;
-
-  const id = Number(btn.getAttribute("data-vote"));
-  const movie = (window.__hh_movies || []).find(x => x.id === id);
-  if (!movie) return;
-
-  try {
-    await toggleMovieVote(movie);
-  } catch (err) {
-    alert("Movie vote error: " + (err?.message || String(err)));
-  }
-});
 
 movieReloadBtn?.addEventListener("click", async () => {
   playSound("tap");
