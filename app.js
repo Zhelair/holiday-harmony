@@ -110,6 +110,83 @@ function todayISODate() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
+function shortText(s, n = 160){
+  s = (s || "").trim();
+  return s.length > n ? (s.slice(0, n).trim() + "…") : s;
+}
+
+// ==========================
+// Lookback (date + ranges)
+// ==========================
+const datePick = document.getElementById("datePick");
+const btnToday = document.getElementById("btnToday");
+const btnYday = document.getElementById("btnYday");
+const btn7 = document.getElementById("btn7");
+const btn30 = document.getElementById("btn30");
+
+function isoDateNDaysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+let VIEW_MODE = localStorage.getItem("hh_view_mode") || "day"; // "day" | "range"
+let VIEW_START = localStorage.getItem("hh_view_start") || todayISODate();
+let VIEW_END = localStorage.getItem("hh_view_end") || todayISODate();
+
+function setViewDay(iso) {
+  VIEW_MODE = "day";
+  VIEW_START = iso;
+  VIEW_END = iso;
+  localStorage.setItem("hh_view_mode", VIEW_MODE);
+  localStorage.setItem("hh_view_start", VIEW_START);
+  localStorage.setItem("hh_view_end", VIEW_END);
+  if (datePick) datePick.value = VIEW_START;
+}
+
+function setViewRange(startIso, endIso) {
+  VIEW_MODE = "range";
+  VIEW_START = startIso;
+  VIEW_END = endIso;
+  localStorage.setItem("hh_view_mode", VIEW_MODE);
+  localStorage.setItem("hh_view_start", VIEW_START);
+  localStorage.setItem("hh_view_end", VIEW_END);
+  if (datePick) datePick.value = VIEW_END; // show end as “current”
+}
+
+function viewLabel() {
+  if (VIEW_MODE === "day") return VIEW_START;
+  return `${VIEW_START} → ${VIEW_END}`;
+}
+
+function viewDayIso(){
+  // Treat the view end as "the day we're looking at" for daily things (bingo, movie votes, etc.)
+  return VIEW_END || todayISODate();
+}
+
+// Init date input
+if (datePick) {
+  datePick.value = VIEW_END || todayISODate();
+  datePick.addEventListener("change", () => {
+    playSound("tap");
+    setViewDay(datePick.value || todayISODate());
+    loadAll();
+  });
+}
+
+btnToday?.addEventListener("click", () => { playSound("tap"); setViewDay(todayISODate()); loadAll(); });
+btnYday?.addEventListener("click", () => { playSound("tap"); setViewDay(isoDateNDaysAgo(1)); loadAll(); });
+btn7?.addEventListener("click", () => { playSound("tap"); setViewRange(isoDateNDaysAgo(6), todayISODate()); loadAll(); });
+btn30?.addEventListener("click", () => { playSound("tap"); setViewRange(isoDateNDaysAgo(29), todayISODate()); loadAll(); });
+
+// Set initial view from storage
+if (VIEW_MODE === "day") setViewDay(VIEW_START);
+else setViewRange(VIEW_START, VIEW_END);
+
 function isSameLocalDay(isoOrTs) {
   const d = new Date(isoOrTs);
   return d.toDateString() === new Date().toDateString();
@@ -430,7 +507,7 @@ function hashStringToInt(str) {
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
   return h;
 }
-function missionKeyBase() { return `hh_mission_${room}_${todayISODate()}`; }
+function missionKeyBase() { return `hh_mission_${room}_${viewDayIso()}`; }
 function myMissionOverrideKey() { return `${missionKeyBase()}_override_${DEVICE_ID}`; }
 function missionDoneKey() {
   const name = ((nameEl?.value || getSavedName()) || "anon").trim().toLowerCase();
@@ -524,7 +601,7 @@ async function setMood(mood) {
   moodStatusEl.textContent = t("saving");
   playSound("tap");
 
-  const checkin_date = todayISODate();
+  const checkin_date = viewDayIso();
   const { error } = await supa
     .from("checkins")
     .upsert([{ room_code: room, name, checkin_date, mood }],
@@ -745,21 +822,20 @@ function updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount)
   setVibeBar(score, vibe);
 
   recapOut.innerHTML = `
-    <b>${escapeHtml(t("recapTitleInline"))}</b><br>
+    <b>${escapeHtml(t("recapTitleInline"))}</b> <small>(${escapeHtml(viewLabel())})</small><br>
     • ${escapeHtml(t("recapMem"))}: <b>${memoriesTodayCount}</b> • ${escapeHtml(t("recapReact"))}: <b>${reactionsTodayCount}</b><br>
     • ${escapeHtml(t("recapCheck"))}: 😇 <b>${counts.good}</b> / 😐 <b>${counts.ok}</b> / 😤 <b>${counts.bad}</b><br>
     <small>${escapeHtml(t("recapFooter"))}</small>
   `;
 }
 function renderMOTD(memories, reactionsByMemory) {
-  const todays = memories.filter(m => isSameLocalDay(m.created_at));
-  if (!todays.length) {
+  if (!memories.length) {
     motdOut.innerHTML = `<small>${escapeHtml(t("motdEmpty"))}</small>`;
     return { motd: null };
   }
 
   let best = null;
-  for (const m of todays) {
+  for (const m of memories) {
     const rx = reactionsByMemory[String(m.id)]?.total || 0;
     if (!best || rx > best.rx || (rx === best.rx && new Date(m.created_at) > new Date(best.created_at))) {
       best = { ...m, rx };
@@ -816,23 +892,57 @@ modalBack?.addEventListener("click", (e) => {
 });
 
 // ==========================
-// Export (simple text card)
+// Export (PNG download)
 // ==========================
+
+async function exportNodeAsPng(node, filename = "holiday-harmony.png") {
+  if (!node) throw new Error("Nothing to export");
+
+  // Prefer download as PNG
+  try {
+    const dataUrl = await window.htmlToImage.toPng(node, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+    });
+
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return { mode: "download" };
+  } catch (e) {
+    // Fallback: clipboard copy (works in some browsers)
+    try {
+      const dataUrl = await window.htmlToImage.toPng(node, { cacheBust: true, pixelRatio: 2, backgroundColor:"#ffffff" });
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      return { mode: "clipboard" };
+    } catch (e2) {
+      throw new Error("Export failed: " + (e2?.message || e2));
+    }
+  }
+}
+
 exportBtn?.addEventListener("click", async () => {
   playSound("tap");
-  const txt = `Holiday Harmony — ${room}\nDate: ${todayISODate()}\n\n${recapOut?.innerText || ""}\n\nTip: screenshot the Recap too 🙂`;
   try {
-    await navigator.clipboard.writeText(txt);
-    alert("Export copied ✅");
-  } catch {
-    alert(txt);
+    const node = document.getElementById("exportCard");
+    const safeLabel = viewLabel().replace(/\s+/g, "").replace(/→/g, "_");
+    const res = await exportNodeAsPng(node, `holiday-harmony-${room}-${safeLabel}.png`);
+    debug(res.mode === "download" ? "✅ Export downloaded" : "✅ Export copied");
+    playSound("success");
+  } catch (e) {
+    alert(String(e?.message || e));
   }
 });
 
 // ==========================
 // Bingo (3x3 simple co-op, local per device)
 // ==========================
-function bingoKey(){ return `hh_bingo_${room}_${todayISODate()}_${LANG}`; }
+function bingoKey(){ return `hh_bingo_${room}_${viewDayIso()}_${LANG}`; }
 function getBingoPool(){
   return (LANG==="ru")
     ? ["Кто-то сказал «ну я же говорил»","Чай появился","Смеялись вместе","Кто-то предложил фильм","Кто-то помог на кухне","Обнялись/похлопали","Старое фото/воспоминание","Все сели вместе","Кто-то сказал комплимент"]
@@ -870,6 +980,31 @@ renderBingo();
 // ==========================
 const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w342";
 
+const TMDB_POSTER_FULL = "https://image.tmdb.org/t/p/w500";
+const tmdbPage = (id) => `https://www.themoviedb.org/movie/${id}`;
+
+async function tmdbFetch(url) {
+  // url already includes api_key
+  return fetch(url);
+}
+
+async function openTrailer(movieId) {
+  try {
+    const url = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${encodeURIComponent(TMDB_API_KEY)}&language=${encodeURIComponent(tmdbLang())}`;
+    const res = await tmdbFetch(url);
+    if (!res.ok) throw new Error("TMDB videos error: " + res.status);
+    const json = await res.json();
+    const vids = (json.results || []);
+    const best = vids.find(v => v.site === "YouTube" && /Trailer/i.test(v.type))
+              || vids.find(v => v.site === "YouTube");
+    if (best?.key) window.open(`https://www.youtube.com/watch?v=${best.key}`, "_blank");
+    else window.open(tmdbPage(movieId), "_blank");
+  } catch {
+    window.open(tmdbPage(movieId), "_blank");
+  }
+}
+
+
 function tmdbLang() {
   return (LANG === "ru") ? "ru-RU" : "en-US";
 }
@@ -890,7 +1025,7 @@ async function fetchTrendingMovies() {
 }
 
 async function loadMovieVotesToday() {
-  const vote_date = todayISODate();
+  const vote_date = viewDayIso();
   const { data, error } = await supa
     .from("movie_votes")
     .select("*")
@@ -904,7 +1039,7 @@ async function loadMovieVotesToday() {
 
 async function toggleMovieVote(movie) {
   const name = ((nameEl.value || getSavedName()) || "Someone").trim();
-  const vote_date = todayISODate();
+  const vote_date = viewDayIso();
 
   playSound("tap");
 
@@ -985,18 +1120,22 @@ function renderMovies(movies, votes) {
   const { byMovie, mine } = buildVoteMap(votes);
 
   movieGridEl.innerHTML = movies.map(m => {
-    const poster = m.poster_path ? `${TMDB_POSTER_BASE}${m.poster_path}` : "";
+    const poster = m.poster_path ? `${TMDB_POSTER_FULL}${m.poster_path}` : "";
     const count = byMovie[m.id] || 0;
     const iVoted = mine.has(m.id);
+    const overview = shortText(m.overview || "", 160);
 
     return `
-      <div class="movieCard" data-mid="${m.id}">
+      <div class="movieCard">
         ${poster ? `<img class="moviePoster" src="${poster}" alt="${escapeHtml(m.title)}">` : `<div class="moviePoster"></div>`}
         <div class="movieMeta">
           <b>${escapeHtml(m.title)}</b>
-          <small>👍 ${count} ${escapeHtml(t("movieVotes"))} ${iVoted ? " • ✅ " + escapeHtml(t("movieYouVoted")) : ""}</small>
+          <small>👍 ${count} ${escapeHtml(t("movieVotes"))}${iVoted ? " • ✅ " + escapeHtml(t("movieYouVoted")) : ""}</small>
+          ${overview ? `<small style="margin-top:6px;">${escapeHtml(overview)}</small>` : ``}
           <div class="movieActions">
             <button class="movieVoteBtn" type="button" data-vote="${m.id}">👍 Vote</button>
+            <button class="movieVoteBtn" type="button" data-trailer="${m.id}">▶ Trailer</button>
+            <a class="tmdbLink" href="${tmdbPage(m.id)}" target="_blank" rel="noopener">TMDB</a>
           </div>
         </div>
       </div>
@@ -1007,7 +1146,23 @@ function renderMovies(movies, votes) {
 }
 
 movieGridEl?.addEventListener("click", async (e) => {
-  const btn = e.target.closest("button[data-vote]");
+  const voteBtn = e.target.closest("button[data-vote]");
+  if (voteBtn) {
+    const id = Number(voteBtn.getAttribute("data-vote"));
+    const movie = (window.__hh_movies || []).find(x => x.id === id);
+    if (!movie) return;
+    try { await toggleMovieVote(movie); }
+    catch (err) { alert("Movie vote error: " + (err?.message || String(err))); }
+    return;
+  }
+
+  const tBtn = e.target.closest("button[data-trailer]");
+  if (tBtn) {
+    const id = Number(tBtn.getAttribute("data-trailer"));
+    playSound("tap");
+    await openTrailer(id);
+  }
+});
   if (!btn) return;
 
   const id = Number(btn.getAttribute("data-vote"));
@@ -1028,42 +1183,13 @@ movieReloadBtn?.addEventListener("click", async () => {
 
 movieExportBtn?.addEventListener("click", async () => {
   playSound("tap");
-  const movies = window.__hh_movies || [];
-  const votes = window.__hh_movieVotes || [];
-  const { byMovie } = buildVoteMap(votes);
-
-  let best = null;
-  for (const m of movies) {
-    const c = byMovie[m.id] || 0;
-    if (!best || c > best.count) best = { movie: m, count: c };
-  }
-
-  const lines = [];
-  lines.push(`🍿 Movie Night — Room ${room}`);
-  lines.push(`Date: ${todayISODate()}`);
-  lines.push("");
-  if (best && best.count > 0) {
-    lines.push(`Top pick: ${best.movie.title} (👍 ${best.count})`);
-  } else {
-    lines.push(LANG==="ru" ? "Пока нет голосов — выберите фильм 🙂" : "No votes yet — pick a movie 🙂");
-  }
-  lines.push("");
-  lines.push(LANG==="ru" ? "Голоса:" : "Votes:");
-  const ranking = movies
-    .map(m => ({ m, c: byMovie[m.id] || 0 }))
-    .filter(x => x.c > 0)
-    .sort((a,b)=>b.c-a.c)
-    .slice(0, 6);
-
-  if (!ranking.length) lines.push(LANG==="ru" ? "—" : "—");
-  for (const r of ranking) lines.push(`• ${r.m.title} — 👍 ${r.c}`);
-
-  const txt = lines.join("\n");
   try {
-    await navigator.clipboard.writeText(txt);
-    alert(t("movieExport"));
-  } catch {
-    alert(txt);
+    const node = movieTopPickEl?.closest(".card");
+    const res = await exportNodeAsPng(node, `movie-night-${room}-${viewDayIso()}.png`);
+    debug(res.mode === "download" ? "✅ Movie card exported" : "✅ Movie card copied");
+    playSound("success");
+  } catch (e) {
+    alert(String(e?.message || e));
   }
 });
 
@@ -1088,16 +1214,52 @@ async function loadMoviesAndRender(forceRefetch = false) {
 // ==========================
 let lastRenderKey = "";
 
+
 async function loadAll() {
   try {
-    const today = todayISODate();
-    const todayStr = new Date().toDateString();
+    const startDate = VIEW_START || todayISODate();
+    const endDate = VIEW_END || todayISODate();
+
+    // Use timestamps for created_at filtering (Supabase expects ISO-ish strings)
+    const startTs = `${startDate}T00:00:00`;
+    const endTs = `${endDate}T23:59:59`;
 
     const [memRes, chkRes, reactRes, sigRes] = await Promise.all([
-      supa.from("memories").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(80),
-      supa.from("checkins").select("*").eq("room_code", room).eq("checkin_date", today).order("created_at", { ascending: false }).limit(80),
-      supa.from("reactions").select("*").eq("room_code", room).order("created_at", { ascending: false }).limit(600),
-      supa.from("signals").select("*").eq("room_code", room).eq("type", "pause").order("created_at", { ascending: false }).limit(1),
+      supa
+        .from("memories")
+        .select("*")
+        .eq("room_code", room)
+        .gte("created_at", startTs)
+        .lte("created_at", endTs)
+        .order("created_at", { ascending: false })
+        .limit(200),
+
+      supa
+        .from("checkins")
+        .select("*")
+        .eq("room_code", room)
+        .gte("checkin_date", startDate)
+        .lte("checkin_date", endDate)
+        .order("created_at", { ascending: false })
+        .limit(300),
+
+      supa
+        .from("reactions")
+        .select("*")
+        .eq("room_code", room)
+        .gte("created_at", startTs)
+        .lte("created_at", endTs)
+        .order("created_at", { ascending: false })
+        .limit(2000),
+
+      // pause stays “latest”
+      supa
+        .from("signals")
+        .select("*")
+        .eq("room_code", room)
+        .eq("type", "pause")
+        .order("created_at", { ascending: false })
+        .limit(1),
     ]);
 
     if (memRes.error) throw memRes.error;
@@ -1106,28 +1268,26 @@ async function loadAll() {
     if (sigRes.error) throw sigRes.error;
 
     const memories = memRes.data || [];
-    const checkinsToday = chkRes.data || [];
+    const checkins = chkRes.data || [];
     const reactions = reactRes.data || [];
     const pauseSignal = (sigRes.data && sigRes.data[0]) ? sigRes.data[0] : null;
 
-    const memoriesTodayCount = memories.filter(m => new Date(m.created_at).toDateString() === todayStr).length;
-
     const reactionsByMemory = {};
-    let reactionsTodayCount = 0;
-
     for (const r of reactions) {
       const memId = String(r.memory_id);
       if (!reactionsByMemory[memId]) reactionsByMemory[memId] = { "❤️": 0, "😂": 0, "⭐": 0, total: 0 };
       if (reactionsByMemory[memId][r.emoji] !== undefined) reactionsByMemory[memId][r.emoji] += 1;
       reactionsByMemory[memId].total += 1;
-      if (new Date(r.created_at).toDateString() === todayStr) reactionsTodayCount += 1;
     }
 
-    updateDashboard(memoriesTodayCount, checkinsToday, reactionsTodayCount);
-    updateMoodBoard(checkinsToday);
+    const memoriesCount = memories.length;
+    const reactionsCount = reactions.length;
+
+    updateDashboard(memoriesCount, checkins, reactionsCount);
+    updateMoodBoard(checkins);
     updateAwards(memories, reactionsByMemory);
 
-    loadMyMoodSelection(checkinsToday);
+    loadMyMoodSelection(checkins);
     renderMission();
 
     renderMOTD(memories, reactionsByMemory);
@@ -1167,11 +1327,12 @@ async function loadAll() {
     // Movies (separate load)
     await loadMoviesAndRender(false);
 
-    debug("✅ Connected. Data loaded.");
+    debug(`✅ Connected. Showing: ${viewLabel()}`);
   } catch (err) {
     debug("❌ Load error: " + (err?.message || String(err)));
   }
 }
+
 
 // Start
 applyLanguage();
