@@ -1,442 +1,317 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Holiday Harmony — Room</title>
 
-  <!-- Lookback controls -->
-<div class="card">
-  <div class="cardTitle">📅 Lookback</div>
-  <div class="lookbackRow">
-    <button id="btnToday" class="btn">Today</button>
-    <button id="btnYesterday" class="btn">Yesterday</button>
-    <button id="btn7" class="btn">Last 7</button>
-    <button id="btn30" class="btn">Last 30</button>
-    <input id="historyDate" type="date" class="dateInput" />
-  </div>
-  <div id="historyStatus" class="small"></div>
-</div>
-
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Supabase UMD (required) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
     :root{
-      --card:#ffffffcc;
-      --border:#e7e7ef;
-      --text:#1c1c22;
-      --muted:#6b6b78;
-      --shadow:0 10px 30px rgba(0,0,0,.08);
-      --radius:18px;
+      --bg: rgba(255,255,255,0.82);
+      --card: rgba(255,255,255,0.88);
+      --border: rgba(20,20,40,0.10);
+      --text: #121225;
+      --muted: rgba(18,18,37,0.72);
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+      --radius: 18px;
     }
     body{
-      font-family: Inter, system-ui, Arial;
-      max-width: 1100px;
-      margin: 18px auto;
-      padding: 0 14px;
-      color: var(--text);
-      background:
-        linear-gradient(180deg, rgba(246,247,255,.88), rgba(255,255,255,.95)),
-        url("assets/img/bg.jpg");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-    }
-
-    .top{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom: 6px;
-    }
-    h1{ margin:0; font-size: 22px; }
-
-    .pill{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius:999px;
-      padding:10px 12px;
-      max-width:100%;
-      overflow:auto;
-      box-shadow: var(--shadow);
-      font-size: 14px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .pill button{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius:999px;
-      padding:8px 12px;
-      font-weight:800;
-      cursor:pointer;
-      width:auto;
       margin:0;
-      transition: transform .12s ease;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: #f3f3f7;
+      min-height:100vh;
     }
-    .pill button:active{ transform: translateY(1px); }
-    .pill input{ width:auto; margin:0; }
-
+    .bg{
+      position:fixed; inset:0;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.7), transparent 40%),
+        radial-gradient(circle at 80% 10%, rgba(255,255,255,0.6), transparent 40%),
+        radial-gradient(circle at 50% 70%, rgba(255,255,255,0.55), transparent 45%),
+        linear-gradient(180deg, rgba(240,240,248,1), rgba(240,240,248,0.5));
+      filter: blur(0px);
+      z-index:-1;
+    }
+    .wrap{
+      max-width: 980px;
+      margin: 18px auto 60px;
+      padding: 0 14px;
+    }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+    h1{
+      margin: 6px 0;
+      font-size: 28px;
+      letter-spacing: -0.4px;
+      display:flex; gap:10px; align-items:center;
+    }
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding: 10px 12px;
+      border:1px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
     .card{
+      background: var(--card);
       border:1px solid var(--border);
       border-radius: var(--radius);
+      box-shadow: var(--shadow);
       padding: 14px;
       margin: 12px 0;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-      animation: fadeIn .24s ease;
+      backdrop-filter: blur(6px);
     }
-    @keyframes fadeIn{
-      from{ opacity:0; transform:translateY(5px) }
-      to{ opacity:1; transform:translateY(0) }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
-
-    input,textarea,button,select{
+    @media (max-width: 860px){
+      .grid2{ grid-template-columns: 1fr; }
+      h1{ font-size:24px; }
+    }
+    .title{
+      font-weight: 800;
+      margin-bottom: 10px;
+      display:flex; gap:10px; align-items:center;
+    }
+    .muted{ color: var(--muted); font-size: 13px; }
+    input, textarea, select{
       width:100%;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      margin:8px 0;
-      font-size: 15px;
-      background:#fff;
-    }
-    textarea{ resize: vertical; }
-
-    button{
-      font-weight:900;
-      cursor:pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    button:hover{ box-shadow: 0 10px 26px rgba(0,0,0,.09); }
-    button:active{ transform: translateY(1px); }
-    small{ color: var(--muted); }
-
-    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
-    @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr; } }
-
-    .kpiRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
-    .kpi{
-      border:1px solid var(--border);
-      background:#fff;
+      box-sizing:border-box;
+      padding: 12px 12px;
       border-radius: 14px;
-      padding: 10px 12px;
-      flex: 1;
-      min-width: 210px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,0.95);
+      outline:none;
+      font-size: 14px;
     }
-    .kpi b{ display:block; font-size: 16px; }
-
-    .moodRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px; }
-    .moodBtn{
-      flex: 1;
-      min-width: 120px;
-      display:flex;
+    textarea{ min-height: 82px; resize: vertical; }
+    .row{
+      display:flex; gap:10px; flex-wrap:wrap;
       align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:12px;
+    }
+    .btn{
+      border:none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 700;
+      background: rgba(18,18,37,0.06);
+      border:1px solid var(--border);
+      transition: transform .08s ease, background .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(18,18,37,0.08); }
+    .btn:disabled{ opacity: .5; cursor:not-allowed; transform:none; }
+    .btnPrimary{
+      background: rgba(30,120,255,0.14);
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 860px){
+      .kpis{ grid-template-columns: 1fr 1fr; }
+    }
+    .kpi{
+      padding: 10px 12px;
       border-radius: 14px;
       border:1px solid var(--border);
-      background:#fff;
-      font-weight: 900;
+      background: rgba(255,255,255,0.9);
     }
-    .moodBtn span{ font-size: 18px; }
-    .moodSelected{ outline: 3px solid rgba(0,0,0,.09); }
+    .kpi b{ display:block; font-size: 18px; }
+    .kpi span{ display:block; font-size: 12px; color:var(--muted); margin-top: 4px; }
 
-    .miniRow{ display:flex; gap:10px; flex-wrap:wrap; }
-    .miniRow button{ flex:1; min-width: 200px; }
-
-    /* ---- Vibe bar ---- */
+    /* Vibe bar */
     .vibeWrap{
-      margin-top:12px;
-      background:#fff;
+      margin-top: 10px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(18,18,37,0.06);
       border:1px solid var(--border);
-      border-radius:999px;
       overflow:hidden;
-      height:14px;
-      position: relative;
     }
     .vibeBar{
-      height:100%;
-      width:0%;
-      transition: width .45s ease;
-      background: linear-gradient(90deg, #ffe7b3, #fff2d6);
-      background-size: 200% 100%;
-      animation: vibeFlow 6s linear infinite;
-    }
-    @keyframes vibeFlow{
-      from { background-position: 0% 0%; }
-      to   { background-position: 200% 0%; }
-    }
-    .vibePulse{ animation: vibePulse 700ms ease; }
-    @keyframes vibePulse{
-      0%   { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
-      30%  { box-shadow: 0 0 26px rgba(0,0,0,.10); transform: scale(1.01); }
-      100% { box-shadow: 0 0 0 rgba(0,0,0,0); transform: scale(1); }
-    }
-
-    /* ---- Memory feed grid ---- */
-    .memoryGrid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-      margin-bottom: 18px;
-    }
-    @media (min-width: 980px){
-      .memoryGrid{ grid-template-columns: 1fr 1fr; }
-    }
-
-    .memoryCard{
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-      animation: fadeIn .22s ease;
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .memoryCard:hover{
-      transform: translateY(-1px);
-      box-shadow: 0 14px 40px rgba(0,0,0,.10);
-    }
-
-    .memoryCardActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-    .reactBtn{
-      border:1px solid var(--border);
-      background:#fff;
+      height: 100%;
+      width: 0%;
       border-radius: 999px;
-      padding:8px 12px;
-      font-weight:900;
-      cursor:pointer;
-      width:auto;
-      margin:0;
-      transition: transform .10s ease;
+      transition: width 600ms ease;
+      background: linear-gradient(90deg, #b8f0d0, #fff2d6);
     }
-    .reactBtn:active{ transform: scale(1.05); }
-
-    /* ---- Pause banner ---- */
-    .pauseBanner{
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.95);
-      border-radius: var(--radius);
-      padding: 14px;
-      box-shadow: var(--shadow);
-      margin: 12px 0;
-      display:none;
+    .vibePulse{ animation: vibePulse 240ms ease; }
+    @keyframes vibePulse{
+      0%{ transform: scale(1); }
+      50%{ transform: scale(1.02); }
+      100%{ transform: scale(1); }
     }
 
-    /* ---- Recap modal ---- */
-    .modalBack{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.40);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 14px;
-      z-index: 9999;
+    /* Memories */
+    #list{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
     }
-    .modal{
-      width:min(820px, 100%);
-      border-radius: 22px;
-      background: #fff;
-      border: 1px solid var(--border);
-      box-shadow: 0 18px 70px rgba(0,0,0,.25);
-      padding: 16px;
+    @media (max-width: 860px){
+      #list{ grid-template-columns: 1fr; }
     }
-    .modal h2{ margin: 4px 0 8px; }
-    .modal .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .modal .box{
+    .memoryCard{
       border:1px solid var(--border);
       border-radius: 16px;
       padding: 12px;
-      flex:1;
-      min-width: 220px;
-      background: #fafafe;
+      background: rgba(255,255,255,0.92);
+      animation: popIn 180ms ease;
+    }
+    @keyframes popIn{
+      from{ transform: translateY(3px); opacity: .6; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+    .memoryActions{
+      display:flex; gap:8px; margin-top: 10px;
+      flex-wrap:wrap;
+    }
+
+    /* Mood */
+    .moodSelected{
+      outline: 2px solid rgba(30,120,255,0.35);
+      background: rgba(30,120,255,0.10);
+    }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      border-radius: 3px;
+      opacity: 0.95;
+      animation: confetti-fall 900ms ease-out forwards;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(140px) rotate(280deg); opacity: 0; }
     }
   </style>
 </head>
 
 <body>
-  <div class="top">
-    <h1 id="roomTitle">🏠 Room: <span id="roomLabel"></span></h1>
+  <div class="bg"></div>
 
-    <div class="pill" id="shareLink"></div>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>🏠 Room: <span id="roomLabel">…</span></h1>
 
-    <div class="pill">
-      <span id="soundLabel">🔊 Sound</span>
-      <input id="soundToggle" type="checkbox" checked>
-      <button id="partyBtn" type="button">🎉 Party</button>
-      <button id="recapBtn" type="button">📸 Recap</button>
-      <button id="langBtn" type="button">EN / RU</button>
-    </div>
-  </div>
-
-  <div class="pill" id="debug">Booting…</div>
-
-  <div id="pauseBanner" class="pauseBanner"></div>
-
-  <div class="card">
-    <h2 id="appTitle" style="margin:0;">Holiday Harmony</h2>
-    <small id="appSubtitle">Co-op family mini-game: collect good moments, keep the vibe warm.</small>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h3 id="motdTitle">⭐ Memory of the Day</h3>
-      <div id="motdOut"><small>Loading…</small></div>
-      <small id="motdHint">Most loved memory today (by reactions).</small>
-    </div>
-
-    <div class="card">
-      <h3 id="missionTitle">🎯 Today’s Gentle Challenge</h3>
-      <div id="missionOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">Loading…</div>
-      <div class="miniRow" style="margin-top:10px;">
-        <button id="missionDoneBtn" type="button">✅ I did it</button>
-        <button id="missionNewBtn" type="button">🎲 New (just for me)</button>
+      <div class="row">
+        <label class="pill">
+          🔈 Sound
+          <input id="soundToggle" type="checkbox" checked />
+        </label>
+        <button id="partyBtn" class="btn btnPrimary">🎉 Party ambience</button>
       </div>
-      <small id="missionHint">Shared daily challenge + personal reroll option.</small>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 id="dashTitle">📊 Family Dashboard</h3>
-    <div id="happinessLevel">Loading…</div>
-
-    <div class="kpiRow">
-      <div class="kpi"><b id="kpiMemories">—</b><small id="kpiMemoriesLabel">Happy moments today</small></div>
-      <div class="kpi"><b id="kpiCheckins">—</b><small id="kpiCheckinsLabel">Mood check-ins today</small></div>
-      <div class="kpi"><b id="kpiMood">—</b><small id="kpiMoodLabel">Today’s vibe</small></div>
-      <div class="kpi"><b id="kpiReacts">—</b><small id="kpiReactsLabel">Reactions today</small></div>
     </div>
 
-    <div id="vibeWrap" class="vibeWrap" title="Family vibe meter">
-      <div id="vibeBar" class="vibeBar"></div>
-    </div>
+    <div class="pill" id="shareLink">Share: …</div>
 
-    <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;" id="recapOut">Loading…</div>
-  </div>
+    <div class="pill" id="debug" style="margin-top:10px;">Booting...</div>
 
-  <div class="grid">
+    <!-- Lookback -->
     <div class="card">
-      <h3 id="checkinTitle">✅ Daily Mood Check-in</h3>
-      <input id="name" placeholder="Your name" />
-      <small id="checkinHint">Pick your mood for today (you can change it later).</small>
+      <div class="title">📅 Lookback</div>
+      <div class="row">
+        <button id="btnToday" class="btn">Today</button>
+        <button id="btnYesterday" class="btn">Yesterday</button>
+        <button id="btn7" class="btn">Last 7</button>
+        <button id="btn30" class="btn">Last 30</button>
+        <input id="historyDate" type="date" />
+      </div>
+      <div id="historyStatus" class="muted" style="margin-top:8px;"></div>
+    </div>
 
-      <div class="moodRow">
-        <button class="moodBtn" id="moodGood" type="button"><span>😇</span><span id="moodGoodLabel">Calm</span></button>
-        <button class="moodBtn" id="moodOk" type="button"><span>😐</span><span id="moodOkLabel">Okay</span></button>
-        <button class="moodBtn" id="moodBad" type="button"><span>😤</span><span id="moodBadLabel">Overloaded</span></button>
+    <div class="card">
+      <div class="title">📊 Family Dashboard</div>
+      <div class="muted">Dashboard uses memories + mood check-ins (for selected day).</div>
+
+      <div class="kpis">
+        <div class="kpi"><b id="kpiMemories">—</b><span>Happy moments</span></div>
+        <div class="kpi"><b id="kpiCheckins">—</b><span>Mood check-ins</span></div>
+        <div class="kpi"><b id="kpiMood">—</b><span>Vibe</span></div>
+        <div class="kpi"><b id="kpiReacts">—</b><span>Reactions</span></div>
       </div>
 
-      <small id="moodStatus"></small>
-
-      <div class="miniRow" style="margin-top:10px;">
-        <button id="pauseBtn" type="button">🧘 I need a pause</button>
-        <button id="defuseBtn" type="button">🧯 Reset Moment</button>
+      <div id="vibeWrap" class="vibeWrap">
+        <div id="vibeBar" class="vibeBar"></div>
       </div>
 
-      <div class="miniRow" style="margin-top:10px;">
-        <button id="choreBtn" type="button">🎡 Chore Roulette</button>
-        <button id="activityBtn" type="button">🎲 Activity</button>
+      <div id="recap" class="muted" style="margin-top:10px;">Loading recap…</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="title">✅ Daily Mood Check-in</div>
+        <input id="name" placeholder="Your name" />
+        <div class="muted" style="margin:10px 0;">Mood check-in is for today only.</div>
+
+        <div class="row">
+          <button id="moodGood" class="btn">😇 Calm</button>
+          <button id="moodOk" class="btn">😐 Okay</button>
+          <button id="moodBad" class="btn">😤 Overloaded</button>
+        </div>
+
+        <div id="moodStatus" class="muted" style="margin-top:10px;">—</div>
       </div>
 
-      <div id="defuseOut"></div>
-      <div id="activityOut"></div>
+      <div class="card">
+        <div class="title">🧾 Today’s Mood Board</div>
+        <div class="muted">Shows who checked in for selected day.</div>
+        <div id="moodBoard" style="margin-top:10px;">Loading…</div>
+      </div>
     </div>
 
-    <div class="card">
-      <h3 id="awardsTitle">🏆 Awards Preview</h3>
-      <div id="awardsOut">Loading…</div>
-      <small id="awardsHint">Friendly awards only. No roasting. 😄</small>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h3 id="vaultTitle">✨ Memory Vault</h3>
-
-      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+    <div class="grid2">
+      <div class="card">
+        <div class="title">✨ Memory Vault</div>
         <select id="tagSelect">
-          <option value="">(no tag)</option>
-          <option value="🍽">🍽 Food</option>
+          <option value="">(optional tag)</option>
+          <option value="🍽️">🍽️ Food</option>
           <option value="😂">😂 Funny</option>
-          <option value="🎬">🎬 Movie</option>
-          <option value="☕">☕ Tea</option>
-          <option value="🎁">🎁 Gifts</option>
-          <option value="🧸">🧸 Kids</option>
+          <option value="🧹">🧹 Helpful</option>
+          <option value="❤️">❤️ Sweet</option>
+          <option value="🎁">🎁 Gift</option>
         </select>
 
-        <button id="postBtn" type="button">Post memory</button>
+        <textarea id="moment" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
+
+        <div class="row">
+          <button id="postBtn" class="btn btnPrimary">Post memory</button>
+        </div>
+
+        <div id="status" class="muted" style="margin-top:10px;">—</div>
       </div>
 
-      <textarea id="moment" rows="3" placeholder="Happy moment (e.g. We laughed together at breakfast)"></textarea>
-      <small id="status"></small>
-
-      <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
-        <b id="reactionsLabel">Reactions:</b>
-        <span id="reactionsHint">Tap ❤️ 😂 ⭐ on any memory (tap again to undo).</span>
+      <div class="card">
+        <div class="title">📌 Tips</div>
+        <div class="muted">Now that history works, we can add “Export day card” next (killer feature).</div>
+        <div class="muted" style="margin-top:10px;">Right now: enjoy the scrapbook vibe 🙂</div>
       </div>
     </div>
 
     <div class="card">
-      <h3 id="tipsTitle">📌 Quick Tips</h3>
-      <button id="newTipBtn" type="button">Give me a tip</button>
-      <div id="tipsOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">Loading…</div>
-      <small id="tipsHint">Short prompts to keep the vibe warm.</small>
+      <div class="title">🧠 Memories Feed</div>
+      <div class="muted">Two-column on desktop, single on mobile.</div>
+      <div id="list"></div>
     </div>
   </div>
 
-  <div id="moodBoard" class="card"><small>Loading…</small></div>
-
-  <div id="motdDivider" class="card">
-    <small id="feedTitle">✨ Memory Feed</small>
-  </div>
-
-  <div id="list" class="memoryGrid"></div>
-
-  <!-- Recap modal -->
-  <div id="modalBack" class="modalBack">
-    <div class="modal">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-        <h2 id="recapTitle">📸 Today’s Recap</h2>
-        <button id="closeRecapBtn" type="button" style="width:auto;">✖</button>
-      </div>
-
-      <div id="recapModalBody">
-        <div class="row">
-          <div class="box" id="recapModalKpis">Loading…</div>
-          <div class="box" id="recapModalMotd">Loading…</div>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <div class="box" id="recapModalAwards">Loading…</div>
-          <div class="box">
-            <b id="recapHowto">How to share:</b>
-            <div id="recapHowtoText" style="margin-top:8px;">
-              Take a screenshot and send it to the family chat 🙂
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <small id="recapFooterHint">Tip: open this screen on a phone for the best screenshot.</small>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=300"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
