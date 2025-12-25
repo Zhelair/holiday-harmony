@@ -22,6 +22,40 @@ const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY);
 
 // ---- room
+
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
+const SUPABASE_ANON_PUBLIC_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY";
+
+const FUNCTION_LOGIN_URL = "https://frpoialkkjuhqxlvjcdn.supabase.co/functions/v1/room-login";
+
+async function roomLogin(room_code) {
+  const password = prompt("Room password:");
+  if (!password) throw new Error("No password provided");
+
+  const res = await fetch(FUNCTION_LOGIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_code, password }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Login failed");
+
+  localStorage.setItem("hh_room_token_" + room_code, json.token);
+  return json.token;
+}
+
+function makeClient(token) {
+  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
+let token = localStorage.getItem("hh_room_token_" + room);
+if (!token) token = await roomLogin(room);
+
+const supa = makeClient(token);
+
 const params = new URLSearchParams(location.search);
 const room = (params.get("room") || "").trim();
 if (!room) {
