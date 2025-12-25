@@ -254,67 +254,59 @@
       background: #fafafe;
     }
 
-    /* ---- Bingo compact 3x3 ---- */
-    .bingoGrid{
+    /* ---- Movie Night (Netflix-ish grid) ---- */
+    .movieGrid{
       display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:10px;
-      margin-top:10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
     }
-    .bingoCell{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius:14px;
-      padding:10px;
-      min-height:64px;
-      font-weight:800;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      cursor:pointer;
-      user-select:none;
-      transition: transform .12s ease, box-shadow .12s ease;
+    @media (max-width: 720px){
+      .movieGrid{ grid-template-columns: 1fr 1fr; }
     }
-    .bingoCell:active{ transform: translateY(1px); }
-    .bingoCell.on{
-      outline: 3px solid rgba(0,0,0,.08);
-      background: rgba(255,255,255,.92);
-    }
-
-    /* ---- TMDB row ---- */
-    .tmdbRow{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:12px;
-      margin-top:10px;
-    }
-    @media (min-width: 980px){
-      .tmdbRow{ grid-template-columns: repeat(5, 1fr); }
-    }
-    .tmdbCard{
+    .movieCard{
       border:1px solid var(--border);
       border-radius: 16px;
       overflow:hidden;
       background:#fff;
-      box-shadow: var(--shadow);
+      box-shadow: 0 10px 26px rgba(0,0,0,.08);
       transition: transform .12s ease, box-shadow .12s ease;
     }
-    .tmdbCard:hover{
-      transform: translateY(-2px);
-      box-shadow: 0 14px 40px rgba(0,0,0,.12);
+    .movieCard:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(0,0,0,.10);
     }
-    .tmdbPoster{
+    .moviePoster{
       width:100%;
-      aspect-ratio: 2/3;
+      aspect-ratio: 2 / 3;
       object-fit: cover;
       display:block;
+      background: #f0f0f6;
     }
-    .tmdbMeta{
-      padding:10px;
+    .movieMeta{
+      padding: 10px;
     }
-    .tmdbMeta b{ display:block; }
-    .tmdbMeta small{ color: var(--muted); }
+    .movieMeta b{ display:block; font-size: 14px; }
+    .movieMeta small{ display:block; margin-top: 4px; }
+    .movieActions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .movieVoteBtn{
+      width:auto;
+      margin:0;
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+    .movieTopPick{
+      border:1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background:#fff;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -328,8 +320,8 @@
       <span id="soundLabel">🔊 Sound</span>
       <input id="soundToggle" type="checkbox" checked>
       <button id="partyBtn" type="button">🎉 Party</button>
-      <button id="exportBtn" type="button">🧾 Export</button>
       <button id="recapBtn" type="button">📸 Recap</button>
+      <button id="exportBtn" type="button">🧾 Export</button>
       <button id="langBtn" type="button">EN / RU</button>
     </div>
   </div>
@@ -443,22 +435,26 @@
 
     <div class="card">
       <h3 id="bingoTitle">🎯 Family Bingo</h3>
-      <small id="bingoHint">Tap squares together. Complete a line = Bingo!</small>
-      <div class="miniRow" style="margin-top:10px;">
-        <button id="bingoNewBtn" type="button">🆕 New card (today)</button>
+      <div id="bingoOut" style="border:1px solid #e7e7ef; border-radius:14px; padding:12px; background:#fff;">
+        Loading…
       </div>
-      <div id="bingoGrid" class="bingoGrid"></div>
-      <small id="bingoStatus"></small>
+      <small id="bingoHint">Tap squares as they happen. It’s a co-op board 🙂</small>
     </div>
   </div>
 
+  <!-- NEW: Movie Night -->
   <div class="card">
-    <h3 id="tmdbTitle">🎬 Trending Tonight</h3>
-    <small id="tmdbHint">Netflix-style trending picks (powered by TMDB).</small>
-    <div class="miniRow" style="margin-top:10px;">
-      <button id="tmdbRefreshBtn" type="button">🔄 Refresh</button>
+    <h3 id="movieTitle">🍿 Movie Night (Vote)</h3>
+    <small id="movieHint">Tap 👍 to vote. Tap again to unvote. Everyone sees the same winner.</small>
+
+    <div class="movieActions">
+      <button id="movieReloadBtn" type="button" class="movieVoteBtn">🔄 Refresh list</button>
+      <button id="movieExportBtn" type="button" class="movieVoteBtn">🧾 Export movie card</button>
     </div>
-    <div id="tmdbOut" style="margin-top:10px;"><small>Loading…</small></div>
+
+    <div id="movieTopPick" class="movieTopPick">Loading…</div>
+    <div id="movieGrid" class="movieGrid"></div>
+    <small id="movieStatus"></small>
   </div>
 
   <div id="moodBoard" class="card"><small>Loading…</small></div>
@@ -498,6 +494,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js?v=400"></script>
+  <script src="app.js?v=501"></script>
 </body>
 </html>
