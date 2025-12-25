@@ -1,67 +1,190 @@
 # Holiday Harmony 🎄✨
-A lightweight “family survival” web app for the holidays: mood check-ins, memory vault, movie night voting (TMDB), daily recap export, and a fun Bingo mini-game.
 
-Built as a simple static site (HTML/CSS/JS) + Supabase for storage.
+**A cooperative family survival game (disguised as a web app).**
 
-## Features
-- **Mood Check-ins**: quick daily mood + notes
-- **Memory Vault**: add small moments and memories
-- **Movie Night (TMDB)**:
-  - Netflix-style grid
-  - movie overview/summary
-  - TMDB link + Trailer button
-  - voting
-- **Daily Recap Export**:
-  - one-click PNG download (great for sharing)
-- **Date & Range View**:
-  - date picker + Today / Yesterday / Last 7 / Last 30
-  - ranges combine data
-- **Bingo Game**:
-  - tap-to-complete tasks
-  - detects completed lines
-  - “BINGO!” popup + reward
+Holiday Harmony is a lightweight web app for surviving the holidays **together**.
+Think less *Last of Us*, more *Last Piece of Pie*.
 
-## Tech Stack
-- Vanilla **HTML/CSS/JS**
-- **Supabase** (database + simple API)
-- **TMDB API** (movie discovery + trailers)
-- `html-to-image` for PNG export
+You don’t fight zombies — you fight bad moods, indecisive movie nights, and the eternal question:
 
-## Live Demo
-You can run the app instantly here (no setup required):
-👉 https://zhelair.github.io/holiday-harmony/
+> *“So… what do we watch?”*
 
-Open `room.html` if it doesn’t load automatically.
+Built as a simple static site (HTML/CSS/JS) with Supabase for storage and just enough structure to keep everyone sane.
 
-## Setup (Local)
-1. Clone or download this repository.
-2. Open `room.html` directly in a browser  
+---
+
+## What Is This, Really?
+
+A **co-op experience** where everyone wins if:
+
+* moods are checked,
+* memories are saved,
+* movies are voted on democratically,
+* and someone finally gets a BINGO.
+
+No scores. No losers. Just harmony.
+(Or at least fewer arguments.)
+
+---
+
+## Features 🧩
+
+### 🧠 Mood Check-ins
+
+Quick daily mood + optional notes.
+Great for:
+
+* emotional weather forecasts
+* spotting danger zones early
+* passive-aggressive emojis (optional)
+
+---
+
+### 📸 Memory Vault
+
+Save small moments before they vanish forever:
+
+* funny quotes
+* tiny wins
+* “remember when Uncle Alex said *that*?”
+
+Low effort. High nostalgia ROI.
+
+---
+
+### 🎬 Movie Night (TMDB-powered)
+
+Because choosing a movie is the **hardest boss fight**.
+
+Includes:
+
+* Netflix-style movie grid
+* short movie overview (so you know what you’re voting for)
+* TMDB link + Trailer button
+* voting system (democracy… but festive)
+
+---
+
+### 📤 Daily Recap Export
+
+One click → PNG summary.
+
+Perfect for:
+
+* family chats
+* group memories
+* proof that *something* productive happened today
+
+---
+
+### 📅 Date & Range View
+
+Time travel, but useful:
+
+* Today / Yesterday
+* Last 7 / Last 30 days
+* ranges **combine data**, because memory is unreliable during holidays
+
+---
+
+### 🎯 Bingo Mini-Game
+
+The secret weapon.
+
+* tap-to-complete tasks
+* auto-detects completed lines
+* dramatic **“BINGO!”** popup
+* optional reward (cake recommended)
+
+Suddenly everyone wants to help. Strange how that works.
+
+---
+
+## Tech Stack 🛠️
+
+Simple, boring, reliable — like a good family recipe.
+
+* Vanilla **HTML / CSS / JS**
+* **Supabase** (database + simple API)
+* **TMDB API** (movies + trailers)
+* `html-to-image` for PNG exports
+
+No frameworks. No build step. No nonsense.
+
+---
+
+## Live Demo 🚀
+
+Run it instantly — no setup, no excuses:
+
+👉 [https://zhelair.github.io/holiday-harmony/](https://zhelair.github.io/holiday-harmony/)
+
+If it doesn’t load automatically, open `room.html`.
+
+---
+
+## Setup (Local) 🧑‍💻
+
+1. Clone or download this repository
+2. Open `room.html` directly in your browser
    **or** run a local server:
 
 ### Option A — VS Code (recommended)
-- Install the **Live Server** extension
-- Right-click `room.html` → **Open with Live Server**
+
+* Install **Live Server**
+* Right-click `room.html` → **Open with Live Server**
 
 ### Option B — Python
+
 ```bash
 python -m http.server 8000
+```
 
-## Setup (Supabase)
-This project expects Supabase tables for:
-- `memories`
-- `checkins`
-- `reactions`
-- `movie_votes` (or your existing voting table)
-- `signals` (pause)
+---
 
-> Your Supabase URL and anon/public key are used in `app.js`.
+## Setup (Supabase) 🗄️
 
-## Setup (TMDB)
-Movie Night uses TMDB.
-You’ll need a TMDB API key / read token configured in `app.js`.
+The app expects these tables:
 
+* `memories`
+* `checkins`
+* `reactions`
+* `movie_votes` (or your existing voting table)
+* `signals` (pause / sync)
 
-## Notes
-- `/favicon.ico` 404 is harmless. (Optional: add a favicon.)
-- If updates don’t show on Pages, bump cache:
-  - in `room.html`: `app.js?v=1011` → `app.js?v=1012`
+> Supabase URL + anon/public key are used in `app.js`.
+
+⚠️ Heads up:
+Anyone can see the **public anon key** in a static app.
+That’s normal. Just use Row Level Security like a responsible adult.
+
+---
+
+## Setup (TMDB) 🎥
+
+Movie Night needs TMDB access.
+
+* Create a TMDB API key / read token
+* Add it to `app.js`
+
+That’s it. No rituals required.
+
+---
+
+## Notes 📝
+
+* `/favicon.ico` 404 is harmless. The app is not crying for help.
+* If GitHub Pages shows old code, bump cache:
+
+  * `room.html`: `app.js?v=1011` → `app.js?v=1012`
+
+---
+
+If you want, next we can:
+
+* add *“family roles”* (The Organizer, The Grump, The Optimist 😈)
+* turn Bingo into a **season-long campaign**
+* or package this as a template others can reuse (👀 monetization alert)
+
+You built something genuinely charming here.
+Holiday survival, but make it cooperative 💛
