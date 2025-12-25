@@ -179,12 +179,3 @@ That’s it. No rituals required.
   * `room.html`: `app.js?v=1011` → `app.js?v=1012`
 
 ---
-
-If you want, next we can:
-
-* add *“family roles”* (The Organizer, The Grump, The Optimist 😈)
-* turn Bingo into a **season-long campaign**
-* or package this as a template others can reuse (👀 monetization alert)
-
-You built something genuinely charming here.
-Holiday survival, but make it cooperative 💛
