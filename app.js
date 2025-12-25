@@ -92,6 +92,8 @@ const btn30 = document.getElementById("btn30");
 const historyDateEl = document.getElementById("historyDate");
 const historyStatusEl = document.getElementById("historyStatus");
 
+
+
 // ---- helpers
 function escapeHtml(str) {
   return (str || "").replace(/[&<>"']/g, s => ({
@@ -969,6 +971,83 @@ closeRecapBtn?.addEventListener("click", () => {
 });
 modalBack?.addEventListener("click", (e) => {
   if (e.target === modalBack) modalBack.style.display = "none";
+});
+
+
+
+// ==========================
+// Export Card (PNG)
+// ==========================
+const exportBtn = document.getElementById("exportBtn");
+const exportWrap = document.getElementById("exportWrap");
+const exportCard = document.getElementById("exportCard");
+const closeExportBtn = document.getElementById("closeExportBtn");
+const downloadCardBtn = document.getElementById("downloadCardBtn");
+
+const exportRoomEl = document.getElementById("exportRoom");
+const exportDateEl = document.getElementById("exportDate");
+const exportSubEl = document.getElementById("exportSub");
+const exportKpisEl = document.getElementById("exportKpis");
+const exportMotdEl = document.getElementById("exportMotd");
+const exportAwardsEl = document.getElementById("exportAwards");
+
+function exportDateLabel() {
+  try { return new Date().toLocaleDateString(); } catch { return todayISODate(); }
+}
+
+function stripHeavy(html) {
+  // keeps the card clean; avoids huge nested buttons
+  return String(html || "")
+    .replace(/<button[\s\S]*?<\/button>/g, "")
+    .replace(/style="[^"]*"/g, (m) => m) // keep styles
+}
+
+function openExportCard() {
+  playSound("tap");
+  exportRoomEl.textContent = "🏠 " + room;
+  exportDateEl.textContent = exportDateLabel();
+  exportSubEl.textContent = (LANG === "ru") ? "Итог дня (карточка)" : "Today recap (card)";
+
+  // Use already-rendered content
+  exportKpisEl.innerHTML = stripHeavy(recapOut.innerHTML);
+  exportMotdEl.innerHTML = stripHeavy(motdOut.innerHTML);
+  exportAwardsEl.innerHTML = stripHeavy(awardsOut.innerHTML);
+
+  exportWrap.style.display = "flex";
+}
+
+function closeExportCard() {
+  exportWrap.style.display = "none";
+}
+
+exportBtn?.addEventListener("click", openExportCard);
+closeExportBtn?.addEventListener("click", closeExportCard);
+exportWrap?.addEventListener("click", (e) => {
+  if (e.target === exportWrap) closeExportCard();
+});
+
+downloadCardBtn?.addEventListener("click", async () => {
+  playSound("tap");
+  if (!window.html2canvas) {
+    alert("html2canvas not loaded.");
+    return;
+  }
+
+  // render crisp on mobile
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+
+  const canvas = await window.html2canvas(exportCard, {
+    backgroundColor: "#ffffff",
+    scale,
+    useCORS: true
+  });
+
+  const link = document.createElement("a");
+  link.download = `holiday-harmony-${room}-${todayISODate()}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+
+  playSound("success");
 });
 
 // ==========================
