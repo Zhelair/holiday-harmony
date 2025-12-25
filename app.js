@@ -815,8 +815,8 @@ function setVibeBar(percent, vibeText) {
   } else {
     vibeBarEl.style.background = "linear-gradient(90deg, #ffe7b3, #fff2d6)";
   }
-  vibeBarEls
-  .style.backgroundSize = "200% 100%";
+
+  vibeBarEl.style.backgroundSize = "200% 100%";
 
   if (lastVibePercent === null || Math.abs(p - lastVibePercent) >= 3) {
     pulseVibe();
