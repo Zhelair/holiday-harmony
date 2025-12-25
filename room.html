@@ -291,6 +291,7 @@
       <input id="soundToggle" type="checkbox" checked>
       <button id="partyBtn" type="button">🎉 Party</button>
       <button id="recapBtn" type="button">📸 Recap</button>
+      <button id="exportBtn" type="button">🖼 Export</button>
       <button id="langBtn" type="button">EN / RU</button>
     </div>
   </div>
@@ -459,6 +460,49 @@
     </div>
   </div>
 
+<!-- Export Card (hidden) -->
+<div id="exportWrap" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:14px; z-index:99999;">
+  <div id="exportCard" style="width:min(760px, 100%); border-radius:24px; background:#fff; border:1px solid #e7e7ef; box-shadow:0 18px 70px rgba(0,0,0,.25); overflow:hidden;">
+    <div style="padding:18px 18px 12px; background:linear-gradient(135deg, rgba(255,231,179,.9), rgba(214,255,233,.9));">
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+        <div>
+          <div style="font-weight:900; font-size:18px;">Holiday Harmony</div>
+          <div id="exportSub" style="opacity:.85; margin-top:4px;">Room recap</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:900;" id="exportRoom">Room</div>
+          <div style="opacity:.8; font-size:13px;" id="exportDate">Date</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 18px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+          <b id="exportKpisTitle">Today</b>
+          <div id="exportKpis" style="margin-top:8px;">Loading…</div>
+        </div>
+        <div style="border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+          <b id="exportMotdTitle">Memory of the Day</b>
+          <div id="exportMotd" style="margin-top:8px;">Loading…</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; border:1px solid #e7e7ef; border-radius:18px; padding:12px; background:#fafafe;">
+        <b id="exportAwardsTitle">Awards</b>
+        <div id="exportAwards" style="margin-top:8px;">Loading…</div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="downloadCardBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">⬇ Download PNG</button>
+        <button id="closeExportBtn" type="button" style="width:auto; padding:10px 14px; border-radius:999px; font-weight:900;">✖ Close</button>
+      </div>
+
+      <small style="display:block; margin-top:10px; opacity:.7;">Tip: after download, share it in the family chat 🙂</small>
+    </div>
+  </div>
+</div>
+  
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="app.js?v=300"></script>
